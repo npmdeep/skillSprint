@@ -1,0 +1,653 @@
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  configuredChainId,
+  configuredContractAddress,
+  connectWallet,
+  discoverWalletState,
+  formatDate,
+  formatMinutes,
+  getChainLabel,
+  getExplorerLink,
+  hasContractConfig,
+  logSession,
+  parseError,
+  readDashboard,
+  readRecentSessions,
+  saveProfile,
+  shortAddress,
+  switchToSkillSprintChain,
+  updateWeeklyGoal
+} from "./lib/skillSprint";
+
+const emptyWallet = {
+  provider: null,
+  account: "",
+  chainId: 0,
+  isConnecting: false,
+  error: ""
+};
+
+const emptyTx = {
+  status: "idle",
+  message: "",
+  hash: ""
+};
+
+function Panel({ eyebrow, title, body, children, emphasis = "coral" }) {
+  return (
+    <section className={`panel panel-${emphasis}`}>
+      <div className="panel-head">
+        <p className="eyebrow">{eyebrow}</p>
+        <h2>{title}</h2>
+        {body ? <p className="panel-body">{body}</p> : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function MetricCard({ label, value, note, loading = false }) {
+  return (
+    <article className="metric-card">
+      <p className="metric-label">{label}</p>
+      <div className={loading ? "skeleton skeleton-metric" : "metric-value"}>{loading ? "" : value}</div>
+      <p className="metric-note">{loading ? <span className="skeleton skeleton-note" /> : note}</p>
+    </article>
+  );
+}
+
+function ActivitySkeleton() {
+  return (
+    <div className="session-list">
+      {Array.from({ length: 3 }, (_, index) => (
+        <div className="session-card session-skeleton" key={index}>
+          <span className="skeleton skeleton-title" />
+          <span className="skeleton skeleton-note" />
+          <span className="skeleton skeleton-badge" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function App() {
+  const queryClient = useQueryClient();
+  const [wallet, setWallet] = useState(emptyWallet);
+  const [txState, setTxState] = useState(emptyTx);
+  const [profileForm, setProfileForm] = useState({
+    displayName: "",
+    weeklyGoalMinutes: "240"
+  });
+  const [goalForm, setGoalForm] = useState("300");
+  const [sessionForm, setSessionForm] = useState({
+    topic: "",
+    minutesSpent: "45"
+  });
+
+  useEffect(() => {
+    const ethereum = typeof window !== "undefined" ? window.ethereum : undefined;
+    let isMounted = true;
+
+    async function syncWallet() {
+      try {
+        const nextState = await discoverWalletState();
+        if (!isMounted) {
+          return;
+        }
+
+        setWallet((current) => ({
+          ...current,
+          ...nextState,
+          isConnecting: false,
+          error: ""
+        }));
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+
+        setWallet((current) => ({
+          ...current,
+          isConnecting: false,
+          error: parseError(error)
+        }));
+      }
+    }
+
+    syncWallet();
+
+    if (!ethereum) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const handleAccountsChanged = () => {
+      setTxState(emptyTx);
+      syncWallet();
+    };
+
+    const handleChainChanged = () => {
+      setTxState(emptyTx);
+      syncWallet();
+    };
+
+    ethereum.on("accountsChanged", handleAccountsChanged);
+    ethereum.on("chainChanged", handleChainChanged);
+
+    return () => {
+      isMounted = false;
+      ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      ethereum.removeListener("chainChanged", handleChainChanged);
+    };
+  }, []);
+
+  const wrongNetwork =
+    Boolean(configuredChainId) && Boolean(wallet.chainId) && wallet.chainId !== configuredChainId;
+  const readyForReads =
+    Boolean(wallet.provider && wallet.account) && hasContractConfig() && !wrongNetwork;
+
+  const dashboardQuery = useQuery({
+    queryKey: ["dashboard", wallet.account, wallet.chainId],
+    queryFn: () => readDashboard(wallet.provider, wallet.account),
+    enabled: readyForReads
+  });
+
+  const sessionsQuery = useQuery({
+    queryKey: ["sessions", wallet.account, wallet.chainId, dashboardQuery.data?.sessionCount || 0],
+    queryFn: () => readRecentSessions(wallet.provider, wallet.account, 5),
+    enabled: readyForReads && Boolean(dashboardQuery.data)
+  });
+
+  useEffect(() => {
+    if (!dashboardQuery.data) {
+      return;
+    }
+
+    setGoalForm(String(dashboardQuery.data.weeklyGoalMinutes));
+    setProfileForm((current) => ({
+      displayName: current.displayName || dashboardQuery.data.displayName,
+      weeklyGoalMinutes: current.weeklyGoalMinutes || String(dashboardQuery.data.weeklyGoalMinutes)
+    }));
+  }, [dashboardQuery.data]);
+
+  const dashboard = dashboardQuery.data;
+  const weeklyProgress = useMemo(() => {
+    if (!dashboard?.weeklyGoalMinutes) {
+      return 0;
+    }
+
+    return Math.min(
+      100,
+      Math.round((dashboard.minutesThisWeek / dashboard.weeklyGoalMinutes) * 100)
+    );
+  }, [dashboard]);
+
+  async function runLedgerAction(action, pendingMessage, successMessage) {
+    if (!wallet.provider || !wallet.account) {
+      throw new Error("Connect your wallet before sending a transaction.");
+    }
+
+    if (wrongNetwork) {
+      throw new Error(`Switch to ${getChainLabel(configuredChainId)} to continue.`);
+    }
+
+    setTxState({
+      status: "pending",
+      message: pendingMessage,
+      hash: ""
+    });
+
+    try {
+      const tx = await action();
+      setTxState({
+        status: "pending",
+        message: "Transaction submitted. Waiting for confirmation...",
+        hash: tx.hash
+      });
+
+      await tx.wait();
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dashboard", wallet.account] }),
+        queryClient.invalidateQueries({ queryKey: ["sessions", wallet.account] })
+      ]);
+
+      setTxState({
+        status: "success",
+        message: successMessage,
+        hash: tx.hash
+      });
+    } catch (error) {
+      const message = parseError(error);
+      setTxState({
+        status: "error",
+        message,
+        hash: ""
+      });
+      throw error;
+    }
+  }
+
+  const saveProfileMutation = useMutation({
+    mutationFn: ({ displayName, weeklyGoalMinutes }) =>
+      runLedgerAction(
+        () => saveProfile(wallet.provider, wallet.account, displayName, weeklyGoalMinutes),
+        "Creating your learning profile...",
+        "Profile saved on-chain."
+      )
+  });
+
+  const updateGoalMutation = useMutation({
+    mutationFn: ({ weeklyGoalMinutes }) =>
+      runLedgerAction(
+        () => updateWeeklyGoal(wallet.provider, wallet.account, weeklyGoalMinutes),
+        "Updating your weekly target...",
+        "Weekly goal updated."
+      )
+  });
+
+  const logSessionMutation = useMutation({
+    mutationFn: ({ topic, minutesSpent }) =>
+      runLedgerAction(
+        () => logSession(wallet.provider, wallet.account, topic, minutesSpent),
+        "Logging your study sprint...",
+        "Study session logged."
+      )
+  });
+
+  const anyMutationPending =
+    saveProfileMutation.isPending || updateGoalMutation.isPending || logSessionMutation.isPending;
+
+  async function handleConnectWallet() {
+    setWallet((current) => ({
+      ...current,
+      isConnecting: true,
+      error: ""
+    }));
+
+    try {
+      const nextState = await connectWallet();
+      setWallet({
+        ...emptyWallet,
+        ...nextState,
+        isConnecting: false
+      });
+    } catch (error) {
+      setWallet((current) => ({
+        ...current,
+        isConnecting: false,
+        error: parseError(error)
+      }));
+    }
+  }
+
+  function handleProfileSubmit(event) {
+    event.preventDefault();
+
+    const displayName = profileForm.displayName.trim();
+    const weeklyGoalMinutes = Number(profileForm.weeklyGoalMinutes);
+
+    if (!displayName) {
+      setTxState({
+        status: "error",
+        message: "Add a display name before saving your profile.",
+        hash: ""
+      });
+      return;
+    }
+
+    if (Number.isNaN(weeklyGoalMinutes) || weeklyGoalMinutes < 30 || weeklyGoalMinutes > 5000) {
+      setTxState({
+        status: "error",
+        message: "Weekly goal must stay between 30 and 5000 minutes.",
+        hash: ""
+      });
+      return;
+    }
+
+    saveProfileMutation.mutate({
+      displayName,
+      weeklyGoalMinutes
+    });
+  }
+
+  function handleGoalSubmit(event) {
+    event.preventDefault();
+
+    const weeklyGoalMinutes = Number(goalForm);
+    if (Number.isNaN(weeklyGoalMinutes) || weeklyGoalMinutes < 30 || weeklyGoalMinutes > 5000) {
+      setTxState({
+        status: "error",
+        message: "Pick a weekly goal between 30 and 5000 minutes.",
+        hash: ""
+      });
+      return;
+    }
+
+    updateGoalMutation.mutate({
+      weeklyGoalMinutes
+    });
+  }
+
+  function handleSessionSubmit(event) {
+    event.preventDefault();
+
+    const topic = sessionForm.topic.trim();
+    const minutesSpent = Number(sessionForm.minutesSpent);
+
+    if (!topic) {
+      setTxState({
+        status: "error",
+        message: "Give this study sprint a topic so it is meaningful on-chain.",
+        hash: ""
+      });
+      return;
+    }
+
+    if (Number.isNaN(minutesSpent) || minutesSpent < 5 || minutesSpent > 480) {
+      setTxState({
+        status: "error",
+        message: "Study sessions must be between 5 and 480 minutes.",
+        hash: ""
+      });
+      return;
+    }
+
+    logSessionMutation.mutate({
+      topic,
+      minutesSpent
+    });
+  }
+
+  const txExplorerLink = getExplorerLink(wallet.chainId, txState.hash);
+
+  return (
+    <div className="app-shell">
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
+
+      <header className="hero">
+        <div className="hero-copy">
+          <p className="kicker">Original mini-dApp build</p>
+          <h1>SkillSprint Ledger</h1>
+          <p className="lead">
+            Turn study effort into on-chain proof. Set a weekly goal, log focused learning
+            sessions, and keep your streak visible to yourself and your collaborators.
+          </p>
+
+          <div className="hero-actions">
+            <button className="button button-primary" onClick={handleConnectWallet} disabled={wallet.isConnecting}>
+              {wallet.isConnecting ? "Connecting..." : wallet.account ? "Wallet Connected" : "Connect MetaMask"}
+            </button>
+            {wrongNetwork ? (
+              <button className="button button-secondary" onClick={switchToSkillSprintChain}>
+                Switch to {getChainLabel(configuredChainId)}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="hero-card">
+          <div className="hero-chip-row">
+            <span className="chip">{wallet.account ? shortAddress(wallet.account) : "No wallet yet"}</span>
+            <span className="chip">
+              {wallet.chainId ? getChainLabel(wallet.chainId) : "Wallet chain pending"}
+            </span>
+          </div>
+
+          <div className="hero-stat">
+            <span>Contract</span>
+            <strong>{configuredContractAddress ? shortAddress(configuredContractAddress) : "Not deployed"}</strong>
+          </div>
+
+          <div className="progress-shell">
+            <div className="progress-labels">
+              <span>Weekly momentum</span>
+              <span>{dashboard ? `${weeklyProgress}%` : "0%"}</span>
+            </div>
+            <div className="progress-track">
+              <span className="progress-fill" style={{ width: `${weeklyProgress}%` }} />
+            </div>
+          </div>
+
+          <p className="hero-note">
+            Ideal for bootcamp learners, study groups, and builders who want a transparent progress log.
+          </p>
+        </div>
+      </header>
+
+      <section className="status-banner">
+        <div>
+          <p className="status-label">Status</p>
+          <p className="status-copy">
+            {wallet.error ||
+              (wrongNetwork
+                ? `Connected to ${getChainLabel(wallet.chainId)}. Switch to ${getChainLabel(configuredChainId)}.`
+                : txState.message ||
+                  (hasContractConfig()
+                    ? "Ready to read and write study progress."
+                    : "Deploy the contract and export the ABI before using the app."))}
+          </p>
+        </div>
+        {txExplorerLink ? (
+          <a className="status-link" href={txExplorerLink} target="_blank" rel="noreferrer">
+            View transaction
+          </a>
+        ) : null}
+      </section>
+
+      <section className="metrics-grid">
+        <MetricCard
+          label="Hours invested"
+          value={dashboard ? formatMinutes(dashboard.totalMinutes) : "0m"}
+          note={dashboard ? `${dashboard.sessionCount} logged sessions` : "Starts after your first session"}
+          loading={dashboardQuery.isLoading}
+        />
+        <MetricCard
+          label="Weekly progress"
+          value={dashboard ? formatMinutes(dashboard.minutesThisWeek) : "0m"}
+          note={
+            dashboard
+              ? `${Math.max(dashboard.weeklyGoalMinutes - dashboard.minutesThisWeek, 0)} minutes to goal`
+              : "Set your target and begin logging"
+          }
+          loading={dashboardQuery.isLoading}
+        />
+        <MetricCard
+          label="Current streak"
+          value={dashboard ? `${dashboard.currentStreak} day${dashboard.currentStreak === 1 ? "" : "s"}` : "0 days"}
+          note={dashboard ? (dashboard.goalReachedThisWeek ? "Goal reached this week" : "Keep the streak alive") : "Consecutive-day activity tracker"}
+          loading={dashboardQuery.isLoading}
+        />
+        <MetricCard
+          label="Study identity"
+          value={dashboard?.displayName || "No profile"}
+          note={wallet.account ? shortAddress(wallet.account) : "Connect to personalize"}
+          loading={dashboardQuery.isLoading}
+        />
+      </section>
+
+      {!hasContractConfig() ? (
+        <Panel
+          eyebrow="Deployment setup"
+          title="One local deploy unlocks the full app"
+          body="The frontend is wired and ready. To make the mini-dApp interactive, start a local Hardhat node, deploy the contract, and export the ABI config."
+          emphasis="teal"
+        >
+          <div className="code-stack">
+            <code>npx hardhat node</code>
+            <code>npm run deploy:local</code>
+            <code>npm run export:abi</code>
+          </div>
+        </Panel>
+      ) : null}
+
+      <section className="panel-grid">
+        <Panel
+          eyebrow="Action one"
+          title="Create or refresh your learner profile"
+          body="Save a public display name plus the number of study minutes you want to hit every week."
+        >
+          <form className="form-grid" onSubmit={handleProfileSubmit}>
+            <label>
+              <span>Display name</span>
+              <input
+                type="text"
+                placeholder="Protocol Pilot"
+                value={profileForm.displayName}
+                onChange={(event) =>
+                  setProfileForm((current) => ({ ...current, displayName: event.target.value }))
+                }
+              />
+            </label>
+            <label>
+              <span>Weekly goal (minutes)</span>
+              <input
+                type="number"
+                min="30"
+                max="5000"
+                step="5"
+                value={profileForm.weeklyGoalMinutes}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    weeklyGoalMinutes: event.target.value
+                  }))
+                }
+              />
+            </label>
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={anyMutationPending || !wallet.account || !hasContractConfig()}
+            >
+              {saveProfileMutation.isPending ? "Saving..." : "Save profile"}
+            </button>
+          </form>
+        </Panel>
+
+        <Panel
+          eyebrow="Action two"
+          title="Tune your weekly target"
+          body="Update the goal whenever your workload changes. Progress resets each new on-chain week."
+          emphasis="teal"
+        >
+          <form className="form-grid" onSubmit={handleGoalSubmit}>
+            <label>
+              <span>New weekly goal</span>
+              <input
+                type="number"
+                min="30"
+                max="5000"
+                step="5"
+                value={goalForm}
+                onChange={(event) => setGoalForm(event.target.value)}
+              />
+            </label>
+            <button
+              className="button button-secondary"
+              type="submit"
+              disabled={anyMutationPending || !wallet.account || !dashboard || !hasContractConfig()}
+            >
+              {updateGoalMutation.isPending ? "Updating..." : "Update goal"}
+            </button>
+          </form>
+        </Panel>
+
+        <Panel
+          eyebrow="Action three"
+          title="Log a focused study sprint"
+          body="Record the topic, minutes spent, and streak impact. Recent sessions are cached through React Query."
+          emphasis="slate"
+        >
+          <form className="form-grid" onSubmit={handleSessionSubmit}>
+            <label>
+              <span>Topic</span>
+              <input
+                type="text"
+                placeholder="ABI decoding"
+                value={sessionForm.topic}
+                onChange={(event) =>
+                  setSessionForm((current) => ({ ...current, topic: event.target.value }))
+                }
+              />
+            </label>
+            <label>
+              <span>Minutes studied</span>
+              <input
+                type="number"
+                min="5"
+                max="480"
+                step="5"
+                value={sessionForm.minutesSpent}
+                onChange={(event) =>
+                  setSessionForm((current) => ({
+                    ...current,
+                    minutesSpent: event.target.value
+                  }))
+                }
+              />
+            </label>
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={anyMutationPending || !wallet.account || !dashboard || !hasContractConfig()}
+            >
+              {logSessionMutation.isPending ? "Logging..." : "Log session"}
+            </button>
+          </form>
+        </Panel>
+      </section>
+
+      <section className="panel-grid panel-grid-bottom">
+        <Panel
+          eyebrow="Readable history"
+          title="Recent on-chain sessions"
+          body="The feed below pulls the latest five sessions and refreshes after each confirmed transaction."
+          emphasis="slate"
+        >
+          {sessionsQuery.isLoading ? (
+            <ActivitySkeleton />
+          ) : sessionsQuery.data?.length ? (
+            <div className="session-list">
+              {sessionsQuery.data.map((session) => (
+                <article className="session-card" key={session.id}>
+                  <div>
+                    <h3>{session.topic}</h3>
+                    <p>{formatDate(session.timestamp)}</p>
+                  </div>
+                  <div className="session-meta">
+                    <span>{formatMinutes(session.minutesSpent)}</span>
+                    <span>Streak {session.streakAfterLog}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">
+              {dashboard
+                ? "Your feed will populate after the first logged study sprint."
+                : "Create a profile first, then your last five sessions will appear here."}
+            </p>
+          )}
+        </Panel>
+
+        <Panel
+          eyebrow="Submission ready"
+          title="Why this fits the mini-dApp brief"
+          body="The app combines wallet auth, contract interaction, cached reads, loading states, transaction feedback, and reusable deployment scripts."
+          emphasis="teal"
+        >
+          <ul className="check-list">
+            <li>Three user actions: create profile, update goal, log session</li>
+            <li>Solidity contract with structs, mappings, events, and validations</li>
+            <li>React Query caching with post-transaction invalidation</li>
+            <li>Passing Hardhat tests and CI-ready build flow</li>
+          </ul>
+        </Panel>
+      </section>
+    </div>
+  );
+}

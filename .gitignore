@@ -1,0 +1,14 @@
+node_modules/
+frontend/node_modules/
+cache/
+artifacts/
+coverage/
+frontend/dist/
+deployments/
+.env
+frontend/.env
+*.log
+.DS_Store
+.vite/
+.vercel/
+package-lock.json.bak

@@ -1,0 +1,24 @@
+{
+  "name": "skillsprint-ledger",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm --workspace frontend run dev",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:hardhat": "hardhat run scripts/deploy.js",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "export:abi": "node scripts/export-frontend-config.js",
+    "build": "npm run compile && npm run export:abi && npm --workspace frontend run build",
+    "lint": "npm --workspace frontend run lint"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.26.3"
+  }
+}
