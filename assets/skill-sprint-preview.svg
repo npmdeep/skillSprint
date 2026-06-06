@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" fill="none">
+  <rect width="1440" height="900" fill="#f7f1e6"/>
+  <circle cx="1220" cy="180" r="180" fill="#d5f5ef"/>
+  <circle cx="220" cy="760" r="160" fill="#ffe0bf"/>
+  <rect x="72" y="62" width="1296" height="776" rx="34" fill="rgba(255,255,255,0.78)" stroke="#d8d1c5"/>
+  <rect x="120" y="112" width="700" height="232" rx="28" fill="#ffffff" stroke="#e6dfd4"/>
+  <text x="156" y="158" fill="#7a756c" font-family="Outfit, sans-serif" font-size="20" letter-spacing="4">ORIGINAL MINI-DAPP BUILD</text>
+  <text x="156" y="230" fill="#10211f" font-family="Fraunces, serif" font-size="62" font-weight="700">SkillSprint Ledger</text>
+  <text x="156" y="286" fill="#526260" font-family="Outfit, sans-serif" font-size="26">On-chain study tracking with weekly goals, streaks, and proof-of-progress sessions.</text>
+  <rect x="156" y="310" width="220" height="54" rx="18" fill="#f7b267"/>
+  <text x="196" y="345" fill="#10211f" font-family="Outfit, sans-serif" font-size="24" font-weight="700">Connect MetaMask</text>
+  <rect x="856" y="112" width="464" height="232" rx="28" fill="#fbfffe" stroke="#d6efe8"/>
+  <text x="892" y="158" fill="#7a756c" font-family="Outfit, sans-serif" font-size="20" letter-spacing="4">LIVE SNAPSHOT</text>
+  <text x="892" y="218" fill="#10211f" font-family="Fraunces, serif" font-size="46" font-weight="700">72%</text>
+  <text x="1018" y="218" fill="#526260" font-family="Outfit, sans-serif" font-size="26">weekly progress</text>
+  <rect x="892" y="248" width="392" height="18" rx="9" fill="#dce7e4"/>
+  <rect x="892" y="248" width="282" height="18" rx="9" fill="#2ec4b6"/>
+  <rect x="120" y="386" width="290" height="138" rx="24" fill="#ffffff" stroke="#e6dfd4"/>
+  <rect x="430" y="386" width="290" height="138" rx="24" fill="#ffffff" stroke="#e6dfd4"/>
+  <rect x="740" y="386" width="290" height="138" rx="24" fill="#ffffff" stroke="#e6dfd4"/>
+  <rect x="1050" y="386" width="270" height="138" rx="24" fill="#ffffff" stroke="#e6dfd4"/>
+  <text x="148" y="428" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">HOURS INVESTED</text>
+  <text x="148" y="485" fill="#10211f" font-family="Fraunces, serif" font-size="44" font-weight="700">14h 20m</text>
+  <text x="458" y="428" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">WEEKLY PROGRESS</text>
+  <text x="458" y="485" fill="#10211f" font-family="Fraunces, serif" font-size="44" font-weight="700">260m</text>
+  <text x="768" y="428" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">CURRENT STREAK</text>
+  <text x="768" y="485" fill="#10211f" font-family="Fraunces, serif" font-size="44" font-weight="700">6 days</text>
+  <text x="1078" y="428" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">IDENTITY</text>
+  <text x="1078" y="485" fill="#10211f" font-family="Fraunces, serif" font-size="36" font-weight="700">Deep Builder</text>
+  <rect x="120" y="556" width="398" height="234" rx="28" fill="#fffaf4" stroke="#ebdfd1"/>
+  <rect x="540" y="556" width="398" height="234" rx="28" fill="#f8fffd" stroke="#d7eee8"/>
+  <rect x="960" y="556" width="360" height="234" rx="28" fill="#f7fbfa" stroke="#d9e7e4"/>
+  <text x="152" y="602" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">ACTION ONE</text>
+  <text x="152" y="650" fill="#10211f" font-family="Fraunces, serif" font-size="34" font-weight="700">Save profile</text>
+  <rect x="152" y="678" width="334" height="38" rx="16" fill="#ffffff" stroke="#e6dfd4"/>
+  <rect x="152" y="728" width="220" height="42" rx="16" fill="#f7b267"/>
+  <text x="188" y="756" fill="#10211f" font-family="Outfit, sans-serif" font-size="22" font-weight="700">Save profile</text>
+  <text x="572" y="602" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">ACTION TWO</text>
+  <text x="572" y="650" fill="#10211f" font-family="Fraunces, serif" font-size="34" font-weight="700">Tune weekly goal</text>
+  <rect x="572" y="678" width="334" height="38" rx="16" fill="#ffffff" stroke="#d7eee8"/>
+  <rect x="572" y="728" width="220" height="42" rx="16" fill="#2ec4b6"/>
+  <text x="610" y="756" fill="#ffffff" font-family="Outfit, sans-serif" font-size="22" font-weight="700">Update goal</text>
+  <text x="992" y="602" fill="#7a756c" font-family="Outfit, sans-serif" font-size="18" letter-spacing="3">ACTION THREE</text>
+  <text x="992" y="650" fill="#10211f" font-family="Fraunces, serif" font-size="34" font-weight="700">Log session</text>
+  <rect x="992" y="684" width="296" height="30" rx="14" fill="#ffffff" stroke="#d9e7e4"/>
+  <rect x="992" y="724" width="296" height="30" rx="14" fill="#ffffff" stroke="#d9e7e4"/>
+</svg>

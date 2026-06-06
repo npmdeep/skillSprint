@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 700" fill="none">
+  <rect width="1180" height="700" rx="32" fill="#0f1720"/>
+  <rect x="26" y="26" width="1128" height="648" rx="22" fill="#141f2c" stroke="#243244"/>
+  <circle cx="72" cy="64" r="9" fill="#ff7b72"/>
+  <circle cx="104" cy="64" r="9" fill="#f7b267"/>
+  <circle cx="136" cy="64" r="9" fill="#2ec4b6"/>
+  <text x="178" y="71" fill="#94a7b7" font-family="Consolas, monospace" font-size="24">PowerShell - npm run test</text>
+  <text x="70" y="132" fill="#d8e2ea" font-family="Consolas, monospace" font-size="28">&gt; skillsprint-ledger@1.0.0 test</text>
+  <text x="70" y="172" fill="#d8e2ea" font-family="Consolas, monospace" font-size="28">&gt; hardhat test</text>
+  <text x="70" y="248" fill="#f5f7fb" font-family="Consolas, monospace" font-size="30">SkillSprintLedger</text>
+  <text x="96" y="304" fill="#7ce3d6" font-family="Consolas, monospace" font-size="28">✓ deploys with the expected study constraints</text>
+  <text x="96" y="348" fill="#7ce3d6" font-family="Consolas, monospace" font-size="28">✓ creates a learner profile and exposes dashboard data</text>
+  <text x="96" y="392" fill="#7ce3d6" font-family="Consolas, monospace" font-size="28">✓ logs study sessions, stores history, and grows the streak across days</text>
+  <text x="96" y="436" fill="#7ce3d6" font-family="Consolas, monospace" font-size="28">✓ resets weekly progress after a full week boundary</text>
+  <text x="96" y="480" fill="#7ce3d6" font-family="Consolas, monospace" font-size="28">✓ rejects invalid actions and missing profiles</text>
+  <text x="70" y="570" fill="#f7b267" font-family="Consolas, monospace" font-size="32">5 passing (477ms)</text>
+  <text x="70" y="626" fill="#8ca0b3" font-family="Consolas, monospace" font-size="22">Generated after running the local Hardhat test suite on April 19, 2026.</text>
+</svg>
