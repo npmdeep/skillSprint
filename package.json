@@ -7,18 +7,14 @@
   ],
   "scripts": {
     "dev": "npm --workspace frontend run dev",
-    "compile": "hardhat compile",
-    "test": "hardhat test",
-    "deploy:hardhat": "hardhat run scripts/deploy.js",
-    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
-    "export:abi": "node scripts/export-frontend-config.js",
-    "build": "npm run compile && npm run export:abi && npm --workspace frontend run build",
+    "contract:test": "cargo test",
+    "contract:build": "stellar contract build",
+    "contract:deploy": "node scripts/deploy-stellar.mjs",
+    "export:frontend": "node scripts/export-frontend-config.mjs",
+    "build": "npm run contract:build && npm run export:frontend && npm --workspace frontend run build",
     "lint": "npm --workspace frontend run lint"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "dotenv": "^16.4.5",
-    "hardhat": "^2.26.3"
+    "dotenv": "^16.4.5"
   }
 }

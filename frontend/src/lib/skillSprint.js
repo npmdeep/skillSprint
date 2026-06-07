@@ -1,36 +1,95 @@
-import { ethers } from "ethers";
+import {
+  getAddress,
+  getNetworkDetails,
+  isConnected,
+  setAllowed,
+  signTransaction
+} from "@stellar/freighter-api";
+import { contract as StellarContract } from "@stellar/stellar-sdk";
 import { skillSprintConfig } from "./contract-config";
 
-const chainLabels = {
-  31337: "Hardhat Local",
-  11155111: "Sepolia"
+const networkLabels = {
+  "Public Global Stellar Network ; September 2015": "Stellar Mainnet",
+  "Test SDF Network ; September 2015": "Stellar Testnet",
+  standalone: "Stellar Local"
 };
 
-function getInjectedEthereum() {
-  if (typeof window === "undefined") {
-    return undefined;
+export const configuredContractId =
+  import.meta.env.VITE_CONTRACT_ID || skillSprintConfig.fallbackContractId || "";
+export const configuredNetworkPassphrase =
+  import.meta.env.VITE_STELLAR_NETWORK_PASSPHRASE ||
+  "Test SDF Network ; September 2015";
+export const configuredRpcUrl =
+  import.meta.env.VITE_STELLAR_RPC_URL || "https://soroban-testnet.stellar.org";
+
+function hasFreighter() {
+  return typeof window !== "undefined" && Boolean(window.freighter);
+}
+
+function normalizeDashboard(dashboard) {
+  return {
+    displayName: dashboard.display_name,
+    weeklyGoalMinutes: Number(dashboard.weekly_goal_minutes),
+    totalMinutes: Number(dashboard.total_minutes),
+    minutesThisWeek: Number(dashboard.minutes_this_week),
+    sessionCount: Number(dashboard.session_count),
+    currentStreak: Number(dashboard.current_streak),
+    createdAt: Number(dashboard.created_at),
+    goalReachedThisWeek: Boolean(dashboard.goal_reached_this_week)
+  };
+}
+
+function normalizeSession(index, session) {
+  return {
+    id: `${index}-${session.timestamp}`,
+    topic: session.topic,
+    minutesSpent: Number(session.minutes_spent),
+    timestamp: Number(session.timestamp),
+    streakAfterLog: Number(session.streak_after_log)
+  };
+}
+
+async function buildClient(account = "") {
+  if (!hasContractConfig()) {
+    throw new Error(
+      "No contract ID is configured yet. Deploy the Soroban contract, then run `npm run export:frontend`."
+    );
   }
 
-  return window.ethereum;
+  return StellarContract.Client.from({
+    contractId: configuredContractId,
+    rpcUrl: configuredRpcUrl,
+    networkPassphrase: configuredNetworkPassphrase,
+    publicKey: account || undefined,
+    signTransaction
+  });
 }
 
-export const configuredContractAddress =
-  import.meta.env.VITE_CONTRACT_ADDRESS || skillSprintConfig.fallbackAddress || "";
-export const configuredChainId = Number(
-  import.meta.env.VITE_CHAIN_ID || skillSprintConfig.fallbackChainId || 0
-);
-export const configuredRpcUrl = import.meta.env.VITE_RPC_URL || "http://127.0.0.1:8545";
+async function getWalletSnapshot() {
+  const [addressResult, networkResult] = await Promise.all([getAddress(), getNetworkDetails()]);
+
+  if (addressResult.error) {
+    throw new Error(addressResult.error.message);
+  }
+
+  if (networkResult.error) {
+    throw new Error(networkResult.error.message);
+  }
+
+  return {
+    account: addressResult.address,
+    network: networkResult.network,
+    networkPassphrase: networkResult.networkPassphrase,
+    rpcUrl: networkResult.sorobanRpcUrl || configuredRpcUrl
+  };
+}
 
 export function hasContractConfig() {
-  return Boolean(
-    configuredContractAddress &&
-      configuredContractAddress !== ethers.ZeroAddress &&
-      skillSprintConfig.abi.length
-  );
+  return Boolean(configuredContractId);
 }
 
-export function getChainLabel(chainId) {
-  return chainLabels[chainId] || `Chain ${chainId || "Unknown"}`;
+export function getNetworkLabel(networkPassphrase) {
+  return networkLabels[networkPassphrase] || "Custom Stellar Network";
 }
 
 export function shortAddress(value = "") {
@@ -38,7 +97,11 @@ export function shortAddress(value = "") {
     return "Not connected";
   }
 
-  return `${value.slice(0, 6)}...${value.slice(-4)}`;
+  if (value.length <= 14) {
+    return value;
+  }
+
+  return `${value.slice(0, 6)}...${value.slice(-6)}`;
 }
 
 export function formatMinutes(totalMinutes) {
@@ -68,185 +131,144 @@ export function formatDate(unixSeconds) {
   }).format(new Date(Number(unixSeconds) * 1000));
 }
 
-export function getExplorerLink(chainId, hash) {
+export function getExplorerLink(networkPassphrase, hash) {
   if (!hash) {
     return "";
   }
 
-  if (chainId === 11155111) {
-    return `https://sepolia.etherscan.io/tx/${hash}`;
+  if (networkPassphrase === "Test SDF Network ; September 2015") {
+    return `https://stellar.expert/explorer/testnet/tx/${hash}`;
+  }
+
+  if (networkPassphrase === "Public Global Stellar Network ; September 2015") {
+    return `https://stellar.expert/explorer/public/tx/${hash}`;
   }
 
   return "";
 }
 
 export function parseError(error) {
-  const possibleMessages = [
-    error?.shortMessage,
-    error?.reason,
-    error?.info?.error?.message,
-    error?.data?.message,
-    error?.message
+  const candidates = [
+    error?.message,
+    error?.error?.message,
+    error?.response?.data?.detail,
+    error?.toString?.()
   ].filter(Boolean);
 
-  const message = possibleMessages[0] || "Something unexpected happened.";
-  return message.replace("execution reverted: ", "");
-}
-
-async function buildBrowserProvider() {
-  const ethereum = getInjectedEthereum();
-  if (!ethereum) {
-    throw new Error("MetaMask is required to continue.");
-  }
-
-  return new ethers.BrowserProvider(ethereum);
-}
-
-function createContract(connection) {
-  if (!hasContractConfig()) {
-    throw new Error(
-      "No contract address is configured yet. Deploy locally with `npm run deploy:local`, then run `npm run export:abi`."
-    );
-  }
-
-  return new ethers.Contract(configuredContractAddress, skillSprintConfig.abi, connection);
+  return candidates[0] || "Something unexpected happened.";
 }
 
 export async function discoverWalletState() {
-  const ethereum = getInjectedEthereum();
-  if (!ethereum) {
+  if (!hasFreighter()) {
     return {
-      provider: null,
       account: "",
-      chainId: 0
+      network: "",
+      networkPassphrase: "",
+      rpcUrl: configuredRpcUrl
     };
   }
 
-  const accounts = await ethereum.request({ method: "eth_accounts" });
-  if (!accounts.length) {
+  const connection = await isConnected();
+  if (connection.error || !connection.isConnected) {
     return {
-      provider: null,
       account: "",
-      chainId: 0
+      network: "",
+      networkPassphrase: "",
+      rpcUrl: configuredRpcUrl
     };
   }
 
-  const provider = await buildBrowserProvider();
-  const network = await provider.getNetwork();
-
-  return {
-    provider,
-    account: ethers.getAddress(accounts[0]),
-    chainId: Number(network.chainId)
-  };
+  return getWalletSnapshot();
 }
 
 export async function connectWallet() {
-  const provider = await buildBrowserProvider();
-  const accounts = await provider.send("eth_requestAccounts", []);
-  const network = await provider.getNetwork();
-
-  return {
-    provider,
-    account: ethers.getAddress(accounts[0]),
-    chainId: Number(network.chainId)
-  };
-}
-
-export async function switchToSkillSprintChain() {
-  const ethereum = getInjectedEthereum();
-  if (!ethereum || !configuredChainId) {
-    return;
+  if (!hasFreighter()) {
+    throw new Error("Freighter is required to continue.");
   }
 
-  const requestedChainId = `0x${configuredChainId.toString(16)}`;
-
-  try {
-    await ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: requestedChainId }]
-    });
-  } catch (error) {
-    if (error?.code === 4902 && configuredChainId === 31337) {
-      await ethereum.request({
-        method: "wallet_addEthereumChain",
-        params: [
-          {
-            chainId: requestedChainId,
-            chainName: "Hardhat Local",
-            nativeCurrency: {
-              name: "ETH",
-              symbol: "ETH",
-              decimals: 18
-            },
-            rpcUrls: [configuredRpcUrl]
-          }
-        ]
-      });
-      return;
-    }
-
-    throw error;
+  const permission = await setAllowed();
+  if (permission.error) {
+    throw new Error(permission.error.message);
   }
+
+  if (!permission.isAllowed) {
+    throw new Error("Freighter did not grant access to this app.");
+  }
+
+  return getWalletSnapshot();
 }
 
-export async function readDashboard(provider, account) {
-  const contract = createContract(provider);
-  const exists = await contract.hasProfile(account);
+export async function readDashboard(account) {
+  const client = await buildClient();
+  const hasProfileTx = await client.has_profile({ learner: account });
 
-  if (!exists) {
+  if (!hasProfileTx.result) {
     return null;
   }
 
-  const dashboard = await contract.getDashboard(account);
-  return {
-    displayName: dashboard.displayName,
-    weeklyGoalMinutes: Number(dashboard.weeklyGoalMinutes),
-    totalMinutes: Number(dashboard.totalMinutes),
-    minutesThisWeek: Number(dashboard.minutesThisWeek),
-    sessionCount: Number(dashboard.sessionCount),
-    currentStreak: Number(dashboard.currentStreak),
-    createdAt: Number(dashboard.createdAt),
-    goalReachedThisWeek: Boolean(dashboard.goalReachedThisWeek)
-  };
+  const dashboardTx = await client.get_dashboard({ learner: account });
+  return normalizeDashboard(dashboardTx.result);
 }
 
-export async function readRecentSessions(provider, account, limit = 5) {
-  const contract = createContract(provider);
-  const count = Number(await contract.getSessionCount(account));
+export async function readRecentSessions(account, limit = 5) {
+  const client = await buildClient();
+  const countTx = await client.get_session_count({ learner: account });
+  const count = Number(countTx.result || 0);
 
   if (!count) {
     return [];
   }
 
   const indexes = Array.from({ length: Math.min(count, limit) }, (_, idx) => count - idx - 1);
-  const sessions = await Promise.all(indexes.map((index) => contract.getSession(account, index)));
+  const sessionResults = await Promise.all(
+    indexes.map(async (index) => {
+      const sessionTx = await client.get_session({ learner: account, index });
+      return normalizeSession(index, sessionTx.result);
+    })
+  );
 
-  return sessions.map((session, idx) => ({
-    id: `${indexes[idx]}-${session.timestamp}`,
-    topic: session.topic,
-    minutesSpent: Number(session.minutesSpent),
-    timestamp: Number(session.timestamp),
-    streakAfterLog: Number(session.streakAfterLog)
-  }));
+  return sessionResults;
 }
 
-async function buildSignerContract(provider, account) {
-  const signer = await provider.getSigner(account);
-  return createContract(signer);
+async function submitTransaction(assembledTx) {
+  const sentTx = await assembledTx.signAndSend();
+  return {
+    hash:
+      sentTx.sendTransactionResponse?.hash ||
+      sentTx.getTransactionResponse?.txHash ||
+      "",
+    result: sentTx.result
+  };
 }
 
-export async function saveProfile(provider, account, displayName, weeklyGoalMinutes) {
-  const contract = await buildSignerContract(provider, account);
-  return contract.saveProfile(displayName, Number(weeklyGoalMinutes));
+export async function saveProfile(account, displayName, weeklyGoalMinutes) {
+  const client = await buildClient(account);
+  const tx = await client.save_profile({
+    learner: account,
+    display_name: displayName,
+    weekly_goal_minutes: Number(weeklyGoalMinutes)
+  });
+
+  return submitTransaction(tx);
 }
 
-export async function updateWeeklyGoal(provider, account, weeklyGoalMinutes) {
-  const contract = await buildSignerContract(provider, account);
-  return contract.updateWeeklyGoal(Number(weeklyGoalMinutes));
+export async function updateWeeklyGoal(account, weeklyGoalMinutes) {
+  const client = await buildClient(account);
+  const tx = await client.update_weekly_goal({
+    learner: account,
+    new_goal_minutes: Number(weeklyGoalMinutes)
+  });
+
+  return submitTransaction(tx);
 }
 
-export async function logSession(provider, account, topic, minutesSpent) {
-  const contract = await buildSignerContract(provider, account);
-  return contract.logSession(topic, Number(minutesSpent));
+export async function logSession(account, topic, minutesSpent) {
+  const client = await buildClient(account);
+  const tx = await client.log_session({
+    learner: account,
+    topic,
+    minutes_spent: Number(minutesSpent)
+  });
+
+  return submitTransaction(tx);
 }

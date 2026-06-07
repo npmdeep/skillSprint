@@ -1,255 +1,189 @@
 # SkillSprint Ledger
 
-SkillSprint Ledger is a fully original end-to-end mini-dApp for tracking focused study time on-chain. Users connect a wallet, create a public learner profile, set a weekly study target, and log individual learning sessions that build a streak and recent-session history.
+SkillSprint Ledger is a Stellar Soroban mini-dApp for tracking focused study time on-chain. Learners connect a Freighter wallet, create a public profile, set a weekly study target, and log individual study sessions that update weekly progress and streak data.
 
-## Live Demo
+## Stack
 
-- Vercel link: `Add your deployed URL here`
-- Suggested production setup: deploy the repo root on Vercel with `npm install` and `npm run build`
-
-## Demo Video
-
-- Demo video link: `Add your 1-minute Loom or YouTube link here`
-- Recommended recording flow is included in the `Demo Script` section below
-
-## Preview
-
-### UI concept
-
-![SkillSprint Ledger preview](./assets/skill-sprint-preview.svg)
-
-### Test output
-
-![Hardhat test results](./assets/test-results.svg)
-
-## Features
-
-- Wallet connection with MetaMask
-- On-chain learner profile creation with display name and weekly study goal
-- Weekly goal updates without redeploying the contract
-- Study session logging with topic, minutes spent, and streak tracking
-- Rolling daily streak logic
-- Weekly progress reset logic inside the smart contract
-- React Query caching for dashboard and recent sessions
-- Loading states, skeleton placeholders, and transaction feedback
-- Hardhat tests covering deployment, functionality, and edge cases
-- Vercel-ready frontend build pipeline
-
-## Tech Stack
-
+- Smart contract: Rust + Soroban SDK
+- Contract tooling: Stellar CLI
 - Frontend: React + Vite
-- Smart contracts: Solidity + Hardhat
-- Web3: ethers.js
-- Client-side caching: TanStack Query
-- Testing: Hardhat + Mocha + Chai
-- CI: GitHub Actions
+- Wallet: Freighter
+- Network access: Soroban RPC via `@stellar/stellar-sdk`
+- Data fetching: TanStack Query
 
 ## Project Structure
 
 ```text
+contracts/skill_sprint_ledger/
 frontend/
-contracts/
-test/
 scripts/
 assets/
-README.md
-.env.example
+Cargo.toml
 package.json
-hardhat.config.js
-vercel.json
+README.md
 ```
 
-## How It Works
+## Contract Features
 
-### Core user actions
+The Soroban contract stores:
 
-1. Create or refresh a learner profile
-2. Update the weekly study goal
-3. Log a study sprint with topic and minutes
+- A learner profile per Stellar address
+- Individual study sessions by index
+- Weekly progress totals
+- Consecutive-day streaks
 
-### Contract behavior
+Contract methods:
 
-`SkillSprintLedger.sol` stores:
+- `save_profile(learner, display_name, weekly_goal_minutes)`
+- `update_weekly_goal(learner, new_goal_minutes)`
+- `log_session(learner, topic, minutes_spent)`
+- `get_dashboard(learner)`
+- `get_session_count(learner)`
+- `get_session(learner, index)`
+- `has_profile(learner)`
 
-- `LearnerProfile` structs keyed by wallet address
-- Per-user `StudySession[]` history
-- Weekly progress counters
-- Consecutive-day streak information
+Validation rules:
 
-### Main contract functions
-
-- `saveProfile(string displayName, uint32 weeklyGoalMinutes)`
-- `updateWeeklyGoal(uint32 newGoalMinutes)`
-- `logSession(string topic, uint32 minutesSpent)`
-- `getDashboard(address learner)`
-- `getSessionCount(address learner)`
-- `getSession(address learner, uint256 index)`
-- `hasProfile(address learner)`
-
-### Events
-
-- `ProfileSaved`
-- `WeeklyGoalUpdated`
-- `StudySessionLogged`
-
-### Validations
-
-- Display name must be between 3 and 32 characters
-- Topic must be between 3 and 48 characters
-- Session duration must be between 5 and 480 minutes
-- Weekly goal must be between 30 and 5000 minutes
+- Display name: 3 to 32 chars
+- Topic: 3 to 48 chars
+- Session length: 5 to 480 minutes
+- Weekly goal: 30 to 5000 minutes
 
 ## Local Setup
 
 ### 1. Install dependencies
 
-```bash
+```powershell
 npm install
 ```
 
-### 2. Start a local chain
+### 2. Run contract tests
 
-```bash
-npx hardhat node
+```powershell
+npm run contract:test
+```
+
+### 3. Build the Soroban contract
+
+```powershell
+npm run contract:build
+```
+
+This uses `stellar contract build` and outputs:
+
+```text
+target/wasm32v1-none/release/skill_sprint_ledger.wasm
+```
+
+### 4. Configure environment
+
+Copy `.env.example` to `.env` and set a Stellar CLI identity:
+
+```env
+STELLAR_ACCOUNT=alice
+STELLAR_NETWORK=testnet
+STELLAR_CONTRACT_ALIAS=skill_sprint_ledger
+VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+VITE_CONTRACT_ID=
+```
+
+If you also want a frontend-only env file, copy `frontend/.env.example` to `frontend/.env`.
+
+## Deploy To Stellar Testnet
+
+### 1. Create and fund a testnet identity
+
+Using Stellar CLI:
+
+```powershell
+stellar keys generate alice --network testnet --fund
+```
+
+This follows the current Stellar docs flow for testnet deployment with `stellar` CLI.
+
+### 2. Build the contract
+
+```powershell
+npm run contract:build
 ```
 
 ### 3. Deploy the contract
 
-In a second terminal:
-
-```bash
-npm run deploy:local
-npm run export:abi
+```powershell
+npm run contract:deploy
 ```
 
-### 4. Start the frontend
+The deploy script wraps:
 
-```bash
+```powershell
+stellar contract deploy `
+  --wasm target/wasm32v1-none/release/skill_sprint_ledger.wasm `
+  --source-account alice `
+  --network testnet `
+  --alias skill_sprint_ledger
+```
+
+After deployment it writes:
+
+```text
+deployments/testnet.json
+```
+
+### 4. Export frontend config
+
+```powershell
+npm run export:frontend
+```
+
+That updates:
+
+[`frontend/src/lib/contract-config.js`](C:/Users/Deep%20Saha/Desktop/SkillSprint%20Ledger%20level3/frontend/src/lib/contract-config.js:1)
+
+### 5. Start the frontend
+
+```powershell
 npm run dev
 ```
 
-### 5. Production build check
+Then open the Vite URL and connect Freighter.
 
-```bash
+## Production Build
+
+```powershell
 npm run build
 ```
 
-## Environment Variables
+This will:
 
-Create the following files if you want to override defaults:
+1. Build the Soroban contract
+2. Export the frontend config
+3. Build the React app into `frontend/dist`
 
-- Root `.env` for Hardhat deployment credentials
-- `frontend/.env` for frontend RPC and contract settings
+## Vercel Deployment
 
-### Root `.env.example`
+The repo is still Vercel-ready for the frontend.
 
-```bash
-SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
-PRIVATE_KEY=0xyour_private_key
-ETHERSCAN_API_KEY=your_etherscan_api_key
-VITE_RPC_URL=http://127.0.0.1:8545
-VITE_CHAIN_ID=31337
-VITE_CONTRACT_ADDRESS=
-```
-
-### Frontend `.env.example`
-
-```bash
-VITE_RPC_URL=http://127.0.0.1:8545
-VITE_CHAIN_ID=31337
-VITE_CONTRACT_ADDRESS=
-```
-
-## Testing
-
-Run the contract tests with:
-
-```bash
-npm run test
-```
-
-Current local result:
-
-- 5 passing tests
-
-Coverage of those tests:
-
-- Deployment and configured study limits
-- Profile creation and dashboard reads
-- Session logging and session history
-- Streak growth across days
-- Weekly reset logic
-- Validation failures and missing-profile edge cases
-
-## Deployment Notes
-
-### Local deployment
-
-- Start Hardhat with `npx hardhat node`
-- Run `npm run deploy:local`
-- Run `npm run export:abi`
-
-### Sepolia deployment
-
-1. Fill in `SEPOLIA_RPC_URL` and `PRIVATE_KEY` in `.env`
-2. Deploy with:
-
-```bash
-npx hardhat run scripts/deploy.js --network sepolia
-npm run export:abi
-```
-
-3. Set frontend values in `frontend/.env`:
-
-```bash
-VITE_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com
-VITE_CHAIN_ID=11155111
-VITE_CONTRACT_ADDRESS=your_deployed_contract_address
-```
-
-### Vercel deployment
-
-- Connect the repository in Vercel
-- Use the repo root as the project root
 - Install command: `npm install`
 - Build command: `npm run build`
 - Output directory: `frontend/dist`
-- Add the same `VITE_*` variables in the Vercel dashboard before deploying a live frontend
 
-## Demo Script
+Set these Vercel environment variables:
 
-Use this outline for a 1-minute walkthrough:
+- `VITE_STELLAR_RPC_URL`
+- `VITE_STELLAR_NETWORK_PASSPHRASE`
+- `VITE_CONTRACT_ID`
 
-1. Intro, 0:00-0:10
-   - “This is SkillSprint Ledger, an on-chain study tracker built with React, Solidity, Hardhat, and ethers.”
-2. Wallet connection, 0:10-0:20
-   - Connect MetaMask and point out the detected wallet and chain.
-3. Profile setup, 0:20-0:32
-   - Create a learner profile with a display name and weekly goal.
-4. Core feature, 0:32-0:50
-   - Log a study session, show the pending transaction state, and wait for confirmation.
-5. Result, 0:50-1:00
-   - Highlight the updated weekly progress, streak, and recent-session feed.
+## Notes
 
-## Quality Checklist
+- This repo is now a real Stellar Soroban project, not a Hardhat/EVM app.
+- The previous Solidity/Hardhat contract flow has been removed.
+- Freighter must be installed in the browser to submit transactions from the frontend.
 
-- Mini-dApp fully functional for local and testnet flows
-- 3+ passing tests included
-- README covers setup, deployment, and demo expectations
-- Demo link placeholder included
-- Live demo placeholder included
-- Vercel build configuration included
+## Verification
 
-## Git Notes
+Current local checks completed:
 
-Requested git author for commits:
-
-- Username: `balluPiku`
-- Email: `priyankabalmiki2007@gmail.com`
-
-## Next Submission Steps
-
-- Deploy the contract to Sepolia or another EVM testnet
-- Add the deployed contract address to `frontend/.env`
-- Deploy the frontend and replace the live demo placeholder
-- Record the 1-minute walkthrough and replace the demo video placeholder
+- `cargo test`
+- `stellar contract build`
+- `npm --workspace frontend run build`

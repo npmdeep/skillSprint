@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { WatchWalletChanges } from "@stellar/freighter-api";
 import {
-  configuredChainId,
-  configuredContractAddress,
+  configuredContractId,
+  configuredNetworkPassphrase,
   connectWallet,
   discoverWalletState,
   formatDate,
   formatMinutes,
-  getChainLabel,
   getExplorerLink,
+  getNetworkLabel,
   hasContractConfig,
   logSession,
   parseError,
@@ -16,14 +17,14 @@ import {
   readRecentSessions,
   saveProfile,
   shortAddress,
-  switchToSkillSprintChain,
   updateWeeklyGoal
 } from "./lib/skillSprint";
 
 const emptyWallet = {
-  provider: null,
   account: "",
-  chainId: 0,
+  network: "",
+  networkPassphrase: "",
+  rpcUrl: "",
   isConnecting: false,
   error: ""
 };
@@ -86,8 +87,8 @@ export default function App() {
   });
 
   useEffect(() => {
-    const ethereum = typeof window !== "undefined" ? window.ethereum : undefined;
     let isMounted = true;
+    let watcher = null;
 
     async function syncWallet() {
       try {
@@ -117,46 +118,33 @@ export default function App() {
 
     syncWallet();
 
-    if (!ethereum) {
-      return () => {
-        isMounted = false;
-      };
+    if (typeof window !== "undefined") {
+      watcher = new WatchWalletChanges(3000);
+      watcher.watch(() => {
+        setTxState(emptyTx);
+        syncWallet();
+      });
     }
-
-    const handleAccountsChanged = () => {
-      setTxState(emptyTx);
-      syncWallet();
-    };
-
-    const handleChainChanged = () => {
-      setTxState(emptyTx);
-      syncWallet();
-    };
-
-    ethereum.on("accountsChanged", handleAccountsChanged);
-    ethereum.on("chainChanged", handleChainChanged);
 
     return () => {
       isMounted = false;
-      ethereum.removeListener("accountsChanged", handleAccountsChanged);
-      ethereum.removeListener("chainChanged", handleChainChanged);
+      watcher?.stop?.();
     };
   }, []);
 
   const wrongNetwork =
-    Boolean(configuredChainId) && Boolean(wallet.chainId) && wallet.chainId !== configuredChainId;
-  const readyForReads =
-    Boolean(wallet.provider && wallet.account) && hasContractConfig() && !wrongNetwork;
+    Boolean(wallet.networkPassphrase) && wallet.networkPassphrase !== configuredNetworkPassphrase;
+  const readyForReads = Boolean(wallet.account) && hasContractConfig() && !wrongNetwork;
 
   const dashboardQuery = useQuery({
-    queryKey: ["dashboard", wallet.account, wallet.chainId],
-    queryFn: () => readDashboard(wallet.provider, wallet.account),
+    queryKey: ["dashboard", wallet.account, wallet.networkPassphrase],
+    queryFn: () => readDashboard(wallet.account),
     enabled: readyForReads
   });
 
   const sessionsQuery = useQuery({
-    queryKey: ["sessions", wallet.account, wallet.chainId, dashboardQuery.data?.sessionCount || 0],
-    queryFn: () => readRecentSessions(wallet.provider, wallet.account, 5),
+    queryKey: ["sessions", wallet.account, wallet.networkPassphrase, dashboardQuery.data?.sessionCount || 0],
+    queryFn: () => readRecentSessions(wallet.account, 5),
     enabled: readyForReads && Boolean(dashboardQuery.data)
   });
 
@@ -185,12 +173,12 @@ export default function App() {
   }, [dashboard]);
 
   async function runLedgerAction(action, pendingMessage, successMessage) {
-    if (!wallet.provider || !wallet.account) {
-      throw new Error("Connect your wallet before sending a transaction.");
+    if (!wallet.account) {
+      throw new Error("Connect Freighter before sending a transaction.");
     }
 
     if (wrongNetwork) {
-      throw new Error(`Switch to ${getChainLabel(configuredChainId)} to continue.`);
+      throw new Error(`Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`);
     }
 
     setTxState({
@@ -200,14 +188,7 @@ export default function App() {
     });
 
     try {
-      const tx = await action();
-      setTxState({
-        status: "pending",
-        message: "Transaction submitted. Waiting for confirmation...",
-        hash: tx.hash
-      });
-
-      await tx.wait();
+      const result = await action();
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["dashboard", wallet.account] }),
@@ -217,7 +198,7 @@ export default function App() {
       setTxState({
         status: "success",
         message: successMessage,
-        hash: tx.hash
+        hash: result.hash
       });
     } catch (error) {
       const message = parseError(error);
@@ -233,17 +214,17 @@ export default function App() {
   const saveProfileMutation = useMutation({
     mutationFn: ({ displayName, weeklyGoalMinutes }) =>
       runLedgerAction(
-        () => saveProfile(wallet.provider, wallet.account, displayName, weeklyGoalMinutes),
-        "Creating your learning profile...",
-        "Profile saved on-chain."
+        () => saveProfile(wallet.account, displayName, weeklyGoalMinutes),
+        "Creating your learner profile on Stellar...",
+        "Profile saved on Soroban."
       )
   });
 
   const updateGoalMutation = useMutation({
     mutationFn: ({ weeklyGoalMinutes }) =>
       runLedgerAction(
-        () => updateWeeklyGoal(wallet.provider, wallet.account, weeklyGoalMinutes),
-        "Updating your weekly target...",
+        () => updateWeeklyGoal(wallet.account, weeklyGoalMinutes),
+        "Updating your weekly target on Stellar...",
         "Weekly goal updated."
       )
   });
@@ -251,8 +232,8 @@ export default function App() {
   const logSessionMutation = useMutation({
     mutationFn: ({ topic, minutesSpent }) =>
       runLedgerAction(
-        () => logSession(wallet.provider, wallet.account, topic, minutesSpent),
-        "Logging your study sprint...",
+        () => logSession(wallet.account, topic, minutesSpent),
+        "Logging your study sprint on Stellar...",
         "Study session logged."
       )
   });
@@ -361,7 +342,7 @@ export default function App() {
     });
   }
 
-  const txExplorerLink = getExplorerLink(wallet.chainId, txState.hash);
+  const txExplorerLink = getExplorerLink(wallet.networkPassphrase, txState.hash);
 
   return (
     <div className="app-shell">
@@ -370,22 +351,17 @@ export default function App() {
 
       <header className="hero">
         <div className="hero-copy">
-          <p className="kicker">Original mini-dApp build</p>
+          <p className="kicker">Soroban mini-dApp build</p>
           <h1>SkillSprint Ledger</h1>
           <p className="lead">
-            Turn study effort into on-chain proof. Set a weekly goal, log focused learning
-            sessions, and keep your streak visible to yourself and your collaborators.
+            Turn study effort into on-chain proof on Stellar. Set a weekly goal, log focused
+            learning sessions, and keep your streak visible to yourself and your collaborators.
           </p>
 
           <div className="hero-actions">
             <button className="button button-primary" onClick={handleConnectWallet} disabled={wallet.isConnecting}>
-              {wallet.isConnecting ? "Connecting..." : wallet.account ? "Wallet Connected" : "Connect MetaMask"}
+              {wallet.isConnecting ? "Connecting..." : wallet.account ? "Wallet Connected" : "Connect Freighter"}
             </button>
-            {wrongNetwork ? (
-              <button className="button button-secondary" onClick={switchToSkillSprintChain}>
-                Switch to {getChainLabel(configuredChainId)}
-              </button>
-            ) : null}
           </div>
         </div>
 
@@ -393,13 +369,15 @@ export default function App() {
           <div className="hero-chip-row">
             <span className="chip">{wallet.account ? shortAddress(wallet.account) : "No wallet yet"}</span>
             <span className="chip">
-              {wallet.chainId ? getChainLabel(wallet.chainId) : "Wallet chain pending"}
+              {wallet.networkPassphrase
+                ? getNetworkLabel(wallet.networkPassphrase)
+                : "Wallet network pending"}
             </span>
           </div>
 
           <div className="hero-stat">
-            <span>Contract</span>
-            <strong>{configuredContractAddress ? shortAddress(configuredContractAddress) : "Not deployed"}</strong>
+            <span>Contract ID</span>
+            <strong>{configuredContractId ? shortAddress(configuredContractId) : "Not deployed"}</strong>
           </div>
 
           <div className="progress-shell">
@@ -413,7 +391,7 @@ export default function App() {
           </div>
 
           <p className="hero-note">
-            Ideal for bootcamp learners, study groups, and builders who want a transparent progress log.
+            Built for study groups, bootcamp learners, and accountability-friendly progress on Soroban.
           </p>
         </div>
       </header>
@@ -424,11 +402,11 @@ export default function App() {
           <p className="status-copy">
             {wallet.error ||
               (wrongNetwork
-                ? `Connected to ${getChainLabel(wallet.chainId)}. Switch to ${getChainLabel(configuredChainId)}.`
+                ? `Connected to ${getNetworkLabel(wallet.networkPassphrase)}. Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`
                 : txState.message ||
                   (hasContractConfig()
-                    ? "Ready to read and write study progress."
-                    : "Deploy the contract and export the ABI before using the app."))}
+                    ? "Ready to read and write study progress on Stellar."
+                    : "Deploy the Soroban contract and export the frontend config before using the app."))}
           </p>
         </div>
         {txExplorerLink ? (
@@ -472,14 +450,15 @@ export default function App() {
       {!hasContractConfig() ? (
         <Panel
           eyebrow="Deployment setup"
-          title="One local deploy unlocks the full app"
-          body="The frontend is wired and ready. To make the mini-dApp interactive, start a local Hardhat node, deploy the contract, and export the ABI config."
+          title="One Soroban deploy unlocks the full app"
+          body="The frontend is wired and ready. Build the Rust contract, deploy it with Stellar CLI, and export the contract ID for the UI."
           emphasis="teal"
         >
           <div className="code-stack">
-            <code>npx hardhat node</code>
-            <code>npm run deploy:local</code>
-            <code>npm run export:abi</code>
+            <code>stellar keys generate alice --network testnet --fund</code>
+            <code>npm run contract:build</code>
+            <code>npm run contract:deploy</code>
+            <code>npm run export:frontend</code>
           </div>
         </Panel>
       ) : null}
@@ -559,7 +538,7 @@ export default function App() {
         <Panel
           eyebrow="Action three"
           title="Log a focused study sprint"
-          body="Record the topic, minutes spent, and streak impact. Recent sessions are cached through React Query."
+          body="Record the topic, minutes spent, and streak impact. Recent sessions refresh after each confirmed Soroban transaction."
           emphasis="slate"
         >
           <form className="form-grid" onSubmit={handleSessionSubmit}>
@@ -567,7 +546,7 @@ export default function App() {
               <span>Topic</span>
               <input
                 type="text"
-                placeholder="ABI decoding"
+                placeholder="Contract storage"
                 value={sessionForm.topic}
                 onChange={(event) =>
                   setSessionForm((current) => ({ ...current, topic: event.target.value }))
@@ -636,15 +615,15 @@ export default function App() {
 
         <Panel
           eyebrow="Submission ready"
-          title="Why this fits the mini-dApp brief"
-          body="The app combines wallet auth, contract interaction, cached reads, loading states, transaction feedback, and reusable deployment scripts."
+          title="Why this now fits the Stellar brief"
+          body="The app uses a Soroban Rust contract, Stellar CLI deployment, Freighter wallet auth, Soroban RPC reads, and on-chain write transactions."
           emphasis="teal"
         >
           <ul className="check-list">
             <li>Three user actions: create profile, update goal, log session</li>
-            <li>Solidity contract with structs, mappings, events, and validations</li>
-            <li>React Query caching with post-transaction invalidation</li>
-            <li>Passing Hardhat tests and CI-ready build flow</li>
+            <li>Soroban contract with typed storage, events, and validations</li>
+            <li>Freighter connection plus Soroban transaction signing</li>
+            <li>Rust tests and Stellar CLI deployment flow</li>
           </ul>
         </Panel>
       </section>
