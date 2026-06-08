@@ -2,6 +2,37 @@
 
 SkillSprint Ledger is a Stellar Soroban mini-dApp for tracking focused study time on-chain. Learners connect a Freighter wallet, create a public profile, set a weekly study target, and log individual study sessions that update weekly progress and streak data.
 
+## Submission Links
+
+- MVP demo video: [mvp.mp4](./mvp.mp4)
+- Stellar Lab contract page: `https://lab.stellar.org/r/testnet/contract/CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
+- Testnet transaction 1: `https://stellar.expert/explorer/testnet/tx/27739ea83c74e3b25086c9c2dd53ff9f4d39ad9834d5dbb9461d63ed910e9ec4`
+- Testnet transaction 2: `https://stellar.expert/explorer/testnet/tx/8f47a8eb7b284a7bc562f8785eb2c2cf50e428954d709574840e6224d07a9e6a`
+
+## UI Preview
+
+![SkillSprint Ledger UI](./assets/skill-sprint-preview.svg)
+
+## Deployment Details
+
+- Network: `Stellar Testnet`
+- Contract alias: `skill_sprint_ledger`
+- Contract ID: `CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
+- Contract explorer: `https://lab.stellar.org/r/testnet/contract/CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
+- Testnet transaction 1: `https://stellar.expert/explorer/testnet/tx/27739ea83c74e3b25086c9c2dd53ff9f4d39ad9834d5dbb9461d63ed910e9ec4`
+- Testnet transaction 2: `https://stellar.expert/explorer/testnet/tx/8f47a8eb7b284a7bc562f8785eb2c2cf50e428954d709574840e6224d07a9e6a`
+
+## What The App Does
+
+Users can:
+
+- Connect a Freighter wallet on Stellar Testnet
+- Create or update a public learner profile
+- Set a weekly study target
+- Log study sessions on-chain
+- Track total minutes, weekly progress, and streaks
+- Review recent sessions pulled from the deployed contract
+
 ## Stack
 
 - Smart contract: Rust + Soroban SDK
@@ -90,6 +121,12 @@ VITE_CONTRACT_ID=
 
 If you also want a frontend-only env file, copy `frontend/.env.example` to `frontend/.env`.
 
+For this deployed testnet instance, you can set:
+
+```env
+VITE_CONTRACT_ID=CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2
+```
+
 ## Deploy To Stellar Testnet
 
 ### 1. Create and fund a testnet identity
@@ -130,6 +167,12 @@ After deployment it writes:
 deployments/testnet.json
 ```
 
+Current deployed record:
+
+- Source account alias: `alice`
+- Contract ID: `CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
+- Deployment timestamp: `2026-04-19T15:26:28.340Z`
+
 ### 4. Export frontend config
 
 ```powershell
@@ -146,7 +189,13 @@ That updates:
 npm run dev
 ```
 
-Then open the Vite URL and connect Freighter.
+Then open the Vite URL and connect Freighter on `Stellar Testnet`.
+
+Example local dev URL from the latest run:
+
+```text
+http://localhost:5174/
+```
 
 ## Production Build
 
@@ -174,11 +223,20 @@ Set these Vercel environment variables:
 - `VITE_STELLAR_NETWORK_PASSPHRASE`
 - `VITE_CONTRACT_ID`
 
+Recommended testnet values:
+
+```env
+VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+VITE_CONTRACT_ID=CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2
+```
+
 ## Notes
 
 - This repo is now a real Stellar Soroban project, not a Hardhat/EVM app.
 - The previous Solidity/Hardhat contract flow has been removed.
 - Freighter must be installed in the browser to submit transactions from the frontend.
+- If Brave blocks Freighter injection on localhost, Chrome or Edge may be more reliable for the demo flow.
 
 ## Verification
 
@@ -187,3 +245,4 @@ Current local checks completed:
 - `cargo test`
 - `stellar contract build`
 - `npm --workspace frontend run build`
+- `npm run contract:deploy`

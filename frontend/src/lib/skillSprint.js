@@ -22,10 +22,6 @@ export const configuredNetworkPassphrase =
 export const configuredRpcUrl =
   import.meta.env.VITE_STELLAR_RPC_URL || "https://soroban-testnet.stellar.org";
 
-function hasFreighter() {
-  return typeof window !== "undefined" && Boolean(window.freighter);
-}
-
 function normalizeDashboard(dashboard) {
   return {
     displayName: dashboard.display_name,
@@ -159,15 +155,6 @@ export function parseError(error) {
 }
 
 export async function discoverWalletState() {
-  if (!hasFreighter()) {
-    return {
-      account: "",
-      network: "",
-      networkPassphrase: "",
-      rpcUrl: configuredRpcUrl
-    };
-  }
-
   const connection = await isConnected();
   if (connection.error || !connection.isConnected) {
     return {
@@ -182,10 +169,6 @@ export async function discoverWalletState() {
 }
 
 export async function connectWallet() {
-  if (!hasFreighter()) {
-    throw new Error("Freighter is required to continue.");
-  }
-
   const permission = await setAllowed();
   if (permission.error) {
     throw new Error(permission.error.message);
