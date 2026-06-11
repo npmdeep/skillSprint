@@ -11,7 +11,11 @@ SkillSprint Ledger is a Stellar Soroban mini-dApp for tracking focused study tim
 
 ## UI Preview
 
+<<<<<<< HEAD
 ![SkillSprint Ledger UI](./ui.png)
+=======
+![SkillSprint Ledger UI](".\ui.png")
+>>>>>>> c4dfc8a4cb0aa96899e2622e8802c4434a085eec
 
 ## Deployment Details
 
