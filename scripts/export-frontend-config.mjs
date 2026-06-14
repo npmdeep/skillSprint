@@ -24,7 +24,6 @@ const fileContents = `export const skillSprintConfig = ${JSON.stringify(
     contractName: "SkillSprintLedger",
     fallbackContractId: deployment?.contractId || "",
     fallbackNetwork: deployment?.network || "testnet",
-    generatedAt: new Date().toISOString(),
     limits: {
       minSessionMinutes: 5,
       maxSessionMinutes: 480,
