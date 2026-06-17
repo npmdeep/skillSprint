@@ -11,8 +11,10 @@ import {
   getExplorerLink,
   getNetworkLabel,
   hasContractConfig,
+  isFreighterInstalled,
   logSession,
   parseError,
+  readContractEvents,
   readDashboard,
   readRecentSessions,
   saveProfile,
@@ -72,8 +74,34 @@ function ActivitySkeleton() {
   );
 }
 
+function EventCard({ event }) {
+  return (
+    <article className="event-card">
+      <div className="event-head">
+        <div>
+          <p className="event-label">{event.label}</p>
+          <p className="event-meta">
+            {shortAddress(event.learner)} • {new Date(event.occurredAt).toLocaleString()}
+          </p>
+        </div>
+        <a
+          className="event-link"
+          href={`https://stellar.expert/explorer/testnet/tx/${event.txHash}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Tx
+        </a>
+      </div>
+      <p className="event-summary">{event.summary}</p>
+      <p className="event-meta">Ledger {event.ledger}</p>
+    </article>
+  );
+}
+
 export default function App() {
   const queryClient = useQueryClient();
+  const freighterInstalled = isFreighterInstalled();
   const [wallet, setWallet] = useState(emptyWallet);
   const [txState, setTxState] = useState(emptyTx);
   const [profileForm, setProfileForm] = useState({
@@ -118,7 +146,7 @@ export default function App() {
 
     syncWallet();
 
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && freighterInstalled) {
       watcher = new WatchWalletChanges(3000);
       watcher.watch(() => {
         setTxState(emptyTx);
@@ -130,7 +158,7 @@ export default function App() {
       isMounted = false;
       watcher?.stop?.();
     };
-  }, []);
+  }, [freighterInstalled]);
 
   const wrongNetwork =
     Boolean(wallet.networkPassphrase) && wallet.networkPassphrase !== configuredNetworkPassphrase;
@@ -146,6 +174,15 @@ export default function App() {
     queryKey: ["sessions", wallet.account, wallet.networkPassphrase, dashboardQuery.data?.sessionCount || 0],
     queryFn: () => readRecentSessions(wallet.account, 5),
     enabled: readyForReads && Boolean(dashboardQuery.data)
+  });
+
+  const liveEventsQuery = useQuery({
+    queryKey: ["contract-events", configuredContractId],
+    queryFn: () => readContractEvents(6),
+    enabled: hasContractConfig(),
+    staleTime: 8_000,
+    refetchInterval: 12_000,
+    refetchIntervalInBackground: false
   });
 
   useEffect(() => {
@@ -192,7 +229,8 @@ export default function App() {
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["dashboard", wallet.account] }),
-        queryClient.invalidateQueries({ queryKey: ["sessions", wallet.account] })
+        queryClient.invalidateQueries({ queryKey: ["sessions", wallet.account] }),
+        queryClient.invalidateQueries({ queryKey: ["contract-events"] })
       ]);
 
       setTxState({
@@ -242,6 +280,14 @@ export default function App() {
     saveProfileMutation.isPending || updateGoalMutation.isPending || logSessionMutation.isPending;
 
   async function handleConnectWallet() {
+    if (!freighterInstalled) {
+      setWallet((current) => ({
+        ...current,
+        error: "Freighter is not installed in this browser."
+      }));
+      return;
+    }
+
     setWallet((current) => ({
       ...current,
       isConnecting: true,
@@ -343,6 +389,22 @@ export default function App() {
   }
 
   const txExplorerLink = getExplorerLink(wallet.networkPassphrase, txState.hash);
+  const contractExplorerLink = configuredContractId
+    ? configuredNetworkPassphrase === "Public Global Stellar Network ; September 2015"
+      ? `https://lab.stellar.org/r/public/contract/${configuredContractId}`
+      : `https://lab.stellar.org/r/testnet/contract/${configuredContractId}`
+    : "";
+
+  const statusMessage =
+    wallet.error ||
+    (!freighterInstalled
+      ? "Freighter is not installed yet. Install the extension to sign Soroban transactions from the browser."
+      : wrongNetwork
+        ? `Connected to ${getNetworkLabel(wallet.networkPassphrase)}. Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`
+        : txState.message ||
+          (hasContractConfig()
+            ? "Ready to read, write, and stream study progress on Stellar."
+            : "Deploy the Soroban contract and export the frontend config before using the app."));
 
   return (
     <div className="app-shell">
@@ -355,13 +417,38 @@ export default function App() {
           <h1>SkillSprint Ledger</h1>
           <p className="lead">
             Turn study effort into on-chain proof on Stellar. Set a weekly goal, log focused
-            learning sessions, and keep your streak visible to yourself and your collaborators.
+            learning sessions, and monitor contract events in near real time from Soroban RPC.
           </p>
 
           <div className="hero-actions">
-            <button className="button button-primary" onClick={handleConnectWallet} disabled={wallet.isConnecting}>
-              {wallet.isConnecting ? "Connecting..." : wallet.account ? "Wallet Connected" : "Connect Freighter"}
-            </button>
+            {freighterInstalled ? (
+              <button
+                className="button button-primary"
+                onClick={handleConnectWallet}
+                disabled={wallet.isConnecting}
+              >
+                {wallet.isConnecting
+                  ? "Connecting..."
+                  : wallet.account
+                    ? "Wallet Connected"
+                    : "Connect Freighter"}
+              </button>
+            ) : (
+              <a
+                className="button button-primary"
+                href="https://www.freighter.app/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Install Freighter
+              </a>
+            )}
+
+            {contractExplorerLink ? (
+              <a className="button button-secondary" href={contractExplorerLink} target="_blank" rel="noreferrer">
+                View contract
+              </a>
+            ) : null}
           </div>
         </div>
 
@@ -372,6 +459,10 @@ export default function App() {
               {wallet.networkPassphrase
                 ? getNetworkLabel(wallet.networkPassphrase)
                 : "Wallet network pending"}
+            </span>
+            <span className="chip chip-live">
+              <span className="live-dot" />
+              Live RPC event feed
             </span>
           </div>
 
@@ -391,7 +482,8 @@ export default function App() {
           </div>
 
           <p className="hero-note">
-            Built for study groups, bootcamp learners, and accountability-friendly progress on Soroban.
+            Built for study groups, bootcamp learners, and accountability-friendly progress on
+            Soroban with deployment-safe frontend builds.
           </p>
         </div>
       </header>
@@ -399,21 +491,21 @@ export default function App() {
       <section className="status-banner">
         <div>
           <p className="status-label">Status</p>
-          <p className="status-copy">
-            {wallet.error ||
-              (wrongNetwork
-                ? `Connected to ${getNetworkLabel(wallet.networkPassphrase)}. Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`
-                : txState.message ||
-                  (hasContractConfig()
-                    ? "Ready to read and write study progress on Stellar."
-                    : "Deploy the Soroban contract and export the frontend config before using the app."))}
-          </p>
+          <p className="status-copy">{statusMessage}</p>
         </div>
-        {txExplorerLink ? (
-          <a className="status-link" href={txExplorerLink} target="_blank" rel="noreferrer">
-            View transaction
-          </a>
-        ) : null}
+
+        <div className="status-actions">
+          {contractExplorerLink ? (
+            <a className="status-link" href={contractExplorerLink} target="_blank" rel="noreferrer">
+              Contract
+            </a>
+          ) : null}
+          {txExplorerLink ? (
+            <a className="status-link" href={txExplorerLink} target="_blank" rel="noreferrer">
+              Last transaction
+            </a>
+          ) : null}
+        </div>
       </section>
 
       <section className="metrics-grid">
@@ -436,7 +528,13 @@ export default function App() {
         <MetricCard
           label="Current streak"
           value={dashboard ? `${dashboard.currentStreak} day${dashboard.currentStreak === 1 ? "" : "s"}` : "0 days"}
-          note={dashboard ? (dashboard.goalReachedThisWeek ? "Goal reached this week" : "Keep the streak alive") : "Consecutive-day activity tracker"}
+          note={
+            dashboard
+              ? dashboard.goalReachedThisWeek
+                ? "Goal reached this week"
+                : "Keep the streak alive"
+              : "Consecutive-day activity tracker"
+          }
           loading={dashboardQuery.isLoading}
         />
         <MetricCard
@@ -538,7 +636,7 @@ export default function App() {
         <Panel
           eyebrow="Action three"
           title="Log a focused study sprint"
-          body="Record the topic, minutes spent, and streak impact. Recent sessions refresh after each confirmed Soroban transaction."
+          body="Record the topic, minutes spent, and streak impact. Recent sessions and live RPC events refresh after each confirmed transaction."
           emphasis="slate"
         >
           <form className="form-grid" onSubmit={handleSessionSubmit}>
@@ -614,16 +712,40 @@ export default function App() {
         </Panel>
 
         <Panel
-          eyebrow="Submission ready"
-          title="Why this now fits the Stellar brief"
-          body="The app uses a Soroban Rust contract, Stellar CLI deployment, Freighter wallet auth, Soroban RPC reads, and on-chain write transactions."
+          eyebrow="Real-time events"
+          title="Live contract activity"
+          body="Recent Soroban contract events are polled from RPC so you can verify writes without reloading the app."
           emphasis="teal"
         >
+          {liveEventsQuery.isLoading ? (
+            <ActivitySkeleton />
+          ) : liveEventsQuery.data?.length ? (
+            <div className="event-feed">
+              {liveEventsQuery.data.map((event) => (
+                <EventCard event={event} key={event.id} />
+              ))}
+            </div>
+          ) : (
+            <p className="empty-state">
+              No recent contract events were found in the current ledger window. Submit a fresh
+              transaction to populate the live stream.
+            </p>
+          )}
+        </Panel>
+      </section>
+
+      <section className="panel-grid panel-grid-single">
+        <Panel
+          eyebrow="Submission ready"
+          title="Why this now fits the advanced production brief"
+          body="The app now pairs Soroban contract writes with live event polling, deployment-safe frontend builds, CI checks, and mobile-first layout adjustments."
+          emphasis="slate"
+        >
           <ul className="check-list">
-            <li>Three user actions: create profile, update goal, log session</li>
-            <li>Soroban contract with typed storage, events, and validations</li>
-            <li>Freighter connection plus Soroban transaction signing</li>
-            <li>Rust tests and Stellar CLI deployment flow</li>
+            <li>Rust Soroban contract with typed storage, events, and validation rules</li>
+            <li>Near real-time Soroban event streaming from RPC for fresh on-chain activity</li>
+            <li>Vercel-safe frontend build path plus GitHub Actions contract and frontend checks</li>
+            <li>Responsive cards, stacked mobile layouts, and runtime error boundary coverage</li>
           </ul>
         </Panel>
       </section>

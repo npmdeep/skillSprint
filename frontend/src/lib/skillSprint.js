@@ -5,7 +5,7 @@ import {
   setAllowed,
   signTransaction
 } from "@stellar/freighter-api";
-import { contract as StellarContract } from "@stellar/stellar-sdk";
+import { contract as StellarContract, rpc, scValToNative } from "@stellar/stellar-sdk";
 import { skillSprintConfig } from "./contract-config";
 
 const networkLabels = {
@@ -21,6 +21,10 @@ export const configuredNetworkPassphrase =
   "Test SDF Network ; September 2015";
 export const configuredRpcUrl =
   import.meta.env.VITE_STELLAR_RPC_URL || "https://soroban-testnet.stellar.org";
+
+function getRpcServer() {
+  return new rpc.Server(configuredRpcUrl);
+}
 
 function normalizeDashboard(dashboard) {
   return {
@@ -82,6 +86,10 @@ async function getWalletSnapshot() {
 
 export function hasContractConfig() {
   return Boolean(configuredContractId);
+}
+
+export function isFreighterInstalled() {
+  return typeof window !== "undefined" && Boolean(window.freighter);
 }
 
 export function getNetworkLabel(networkPassphrase) {
@@ -147,6 +155,7 @@ export function parseError(error) {
   const candidates = [
     error?.message,
     error?.error?.message,
+    error?.detail,
     error?.response?.data?.detail,
     error?.toString?.()
   ].filter(Boolean);
@@ -155,6 +164,15 @@ export function parseError(error) {
 }
 
 export async function discoverWalletState() {
+  if (!isFreighterInstalled()) {
+    return {
+      account: "",
+      network: "",
+      networkPassphrase: "",
+      rpcUrl: configuredRpcUrl
+    };
+  }
+
   const connection = await isConnected();
   if (connection.error || !connection.isConnected) {
     return {
@@ -169,6 +187,10 @@ export async function discoverWalletState() {
 }
 
 export async function connectWallet() {
+  if (!isFreighterInstalled()) {
+    throw new Error("Freighter is not installed in this browser.");
+  }
+
   const permission = await setAllowed();
   if (permission.error) {
     throw new Error(permission.error.message);
@@ -254,4 +276,73 @@ export async function logSession(account, topic, minutesSpent) {
   });
 
   return submitTransaction(tx);
+}
+
+function prettifyEventName(eventName = "") {
+  return eventName
+    .split("_")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
+}
+
+function summarizeEventPayload(eventName, payload) {
+  if (!payload || typeof payload !== "object") {
+    return "Fresh contract activity captured from Soroban RPC.";
+  }
+
+  if (eventName === "profile_saved") {
+    return `${payload.display_name} set a ${payload.weekly_goal_minutes} minute weekly target.`;
+  }
+
+  if (eventName === "study_session_logged") {
+    return `${payload.topic} logged for ${payload.minutes_spent} minutes.`;
+  }
+
+  if (eventName === "weekly_goal_updated") {
+    return `Weekly goal changed to ${payload.weekly_goal_minutes} minutes.`;
+  }
+
+  return "Fresh contract activity captured from Soroban RPC.";
+}
+
+export async function readContractEvents(limit = 6) {
+  if (!hasContractConfig()) {
+    return [];
+  }
+
+  const server = getRpcServer();
+  const latestLedger = await server.getLatestLedger();
+  const startLedger = Math.max(1, Number(latestLedger.sequence) - 320);
+  const response = await server.getEvents({
+    startLedger,
+    filters: [
+      {
+        type: "contract",
+        contractIds: [configuredContractId]
+      }
+    ],
+    pagination: {
+      limit
+    }
+  });
+
+  return response.events
+    .map((event) => {
+      const eventName = scValToNative(event.topic[0]);
+      const learner = event.topic[1] ? scValToNative(event.topic[1]) : "";
+      const payload = event.value ? scValToNative(event.value) : {};
+
+      return {
+        id: event.id,
+        eventName,
+        label: prettifyEventName(eventName),
+        learner,
+        payload,
+        summary: summarizeEventPayload(eventName, payload),
+        ledger: event.ledger,
+        occurredAt: event.ledgerClosedAt,
+        txHash: event.txHash
+      };
+    })
+    .reverse();
 }
