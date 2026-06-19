@@ -23,15 +23,11 @@ Desktop preview:
 
 Mobile responsive view:
 
-![SkillSprint Ledger mobile UI](./assets/mobile-responsive-view.png)
+![SkillSprint Ledger mobile UI](./Mobile%20responsive.png)
 
-## What Changed For Level 3
+CI/CD pipeline proof:
 
-- Added live Soroban contract event polling so recent on-chain activity appears in the UI without a refresh
-- Added a React error boundary and optional runtime webhook reporting through `VITE_ERROR_TRACKING_URL`
-- Split local full builds from deploy-safe frontend builds so Vercel does not depend on the Stellar CLI
-- Replaced the broken GitHub Actions workflow with real contract and frontend checks
-- Tightened responsive layout behavior for mobile screens and smaller tablets
+![SkillSprint Ledger CI/CD](./CI_CD.png)
 
 ## Product Features
 
