@@ -13,7 +13,7 @@ SkillSprint Ledger is a production-ready Stellar Soroban mini-dApp for tracking 
 - Soroban transaction: `https://stellar.expert/explorer/testnet/tx/8f47a8eb7b284a7bc562f8785eb2c2cf50e428954d709574840e6224d07a9e6a`
 - Event stream verification tx: `https://stellar.expert/explorer/testnet/tx/85c67d61774e98c2f0bc2ed10779eebd39aa37a392f21018fca32e8220336396`
 - Event stream verification tx: `https://stellar.expert/explorer/testnet/tx/5528ca427e7004c2314bd1cc5eca76333b22201e41d58c3252197e8f071477d4`
-- Demo video: [mvp.mp4](./mvp.mp4)
+- Demo video: `https://drive.google.com/file/d/1JCLe6s5ADPzqODZ_hu4ph-flDoEEcOaI/view?usp=sharing`
 
 ## Screenshots
 
