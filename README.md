@@ -8,11 +8,12 @@ SkillSprint Ledger is a production-ready Stellar Soroban mini-dApp for tracking 
 
 - Live demo: `https://skillsprint-ledger.vercel.app`
 - CI workflow: `https://github.com/balluPiku/skillsprint-ledger/actions/workflows/ci.yml`
-- Stellar Lab contract page: `https://lab.stellar.org/r/testnet/contract/CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
-- Soroban transaction: `https://stellar.expert/explorer/testnet/tx/27739ea83c74e3b25086c9c2dd53ff9f4d39ad9834d5dbb9461d63ed910e9ec4`
-- Soroban transaction: `https://stellar.expert/explorer/testnet/tx/8f47a8eb7b284a7bc562f8785eb2c2cf50e428954d709574840e6224d07a9e6a`
-- Event stream verification tx: `https://stellar.expert/explorer/testnet/tx/85c67d61774e98c2f0bc2ed10779eebd39aa37a392f21018fca32e8220336396`
-- Event stream verification tx: `https://stellar.expert/explorer/testnet/tx/5528ca427e7004c2314bd1cc5eca76333b22201e41d58c3252197e8f071477d4`
+- Stellar Lab Ledger contract page: `https://lab.stellar.org/r/testnet/contract/CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G`
+- Stellar Lab Rewards contract page: `https://lab.stellar.org/r/testnet/contract/CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM`
+- Soroban Rewards Deploy TX: `https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523`
+- Soroban Ledger Deploy TX: `https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da`
+- Rewards Initialize TX: `https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88`
+- Ledger Initialize TX: `https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a`
 - Demo video: `https://drive.google.com/file/d/1JCLe6s5ADPzqODZ_hu4ph-flDoEEcOaI/view?usp=sharing`
 
 ## Screenshots
@@ -37,6 +38,7 @@ Users can:
 - Create or update a public learner profile
 - Set a weekly study target
 - Log study sessions on-chain
+- Earn on-chain achievement badges via automated inter-contract communication (ICC)
 - Track total minutes, weekly progress, and streaks
 - Read the latest five sessions from the deployed contract
 - Watch recent contract events arrive through Soroban RPC polling
@@ -54,14 +56,15 @@ Users can:
 ## Deployment Details
 
 - Network: `Stellar Testnet`
-- Contract alias: `skill_sprint_ledger`
-- Contract ID: `CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
-- Contract explorer: `https://lab.stellar.org/r/testnet/contract/CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2`
+- Ledger Contract ID: `CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G`
+- Rewards Contract ID: `CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM`
+- Ledger Explorer: `https://lab.stellar.org/r/testnet/contract/CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G`
+- Rewards Explorer: `https://lab.stellar.org/r/testnet/contract/CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM`
 - Vercel production URL: `https://skillsprint-ledger.vercel.app`
 
 Notes:
 
-- Inter-contract calls: not used in this build
+- Inter-contract calls: Fully implemented. Logging study sessions triggers automated badge awards based on total minutes.
 - Custom token or liquidity pool: not used in this build
 - Token or pool address: not applicable
 

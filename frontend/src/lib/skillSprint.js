@@ -16,6 +16,8 @@ const networkLabels = {
 
 export const configuredContractId =
   import.meta.env.VITE_CONTRACT_ID || skillSprintConfig.fallbackContractId || "";
+export const configuredRewardsContractId =
+  import.meta.env.VITE_REWARDS_CONTRACT_ID || skillSprintConfig.fallbackRewardsContractId || "";
 export const configuredNetworkPassphrase =
   import.meta.env.VITE_STELLAR_NETWORK_PASSPHRASE ||
   "Test SDF Network ; September 2015";
@@ -58,6 +60,20 @@ async function buildClient(account = "") {
 
   return StellarContract.Client.from({
     contractId: configuredContractId,
+    rpcUrl: configuredRpcUrl,
+    networkPassphrase: configuredNetworkPassphrase,
+    publicKey: account || undefined,
+    signTransaction
+  });
+}
+
+async function buildRewardsClient(account = "") {
+  if (!configuredRewardsContractId) {
+    throw new Error("No rewards contract ID is configured yet.");
+  }
+
+  return StellarContract.Client.from({
+    contractId: configuredRewardsContractId,
     rpcUrl: configuredRpcUrl,
     networkPassphrase: configuredNetworkPassphrase,
     publicKey: account || undefined,
@@ -233,6 +249,15 @@ export async function readRecentSessions(account, limit = 5) {
   );
 
   return sessionResults;
+}
+
+export async function readBadges(account) {
+  if (!configuredRewardsContractId) {
+    return [];
+  }
+  const client = await buildRewardsClient();
+  const badgesTx = await client.get_badges({ learner: account });
+  return Array.from(badgesTx.result || []).map(Number);
 }
 
 async function submitTransaction(assembledTx) {

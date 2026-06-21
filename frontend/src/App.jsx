@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { WatchWalletChanges } from "@stellar/freighter-api";
 import {
   configuredContractId,
+  configuredRewardsContractId,
   configuredNetworkPassphrase,
   connectWallet,
   discoverWalletState,
@@ -17,6 +18,7 @@ import {
   readContractEvents,
   readDashboard,
   readRecentSessions,
+  readBadges,
   saveProfile,
   shortAddress,
   updateWeeklyGoal
@@ -35,6 +37,12 @@ const emptyTx = {
   status: "idle",
   message: "",
   hash: ""
+};
+
+const badgeDefinitions = {
+  1: { name: "Bronze Learner", desc: "Logged 60+ minutes of total study time", color: "#8a5a36", icon: "🥉" },
+  2: { name: "Silver Learner", desc: "Logged 300+ minutes of total study time", color: "#71717a", icon: "🥈" },
+  3: { name: "Gold Learner", desc: "Logged 1000+ minutes of total study time", color: "#b45309", icon: "🥇" }
 };
 
 function Panel({ eyebrow, title, body, children, emphasis = "coral" }) {
@@ -176,6 +184,12 @@ export default function App() {
     enabled: readyForReads && Boolean(dashboardQuery.data)
   });
 
+  const badgesQuery = useQuery({
+    queryKey: ["badges", wallet.account, wallet.networkPassphrase, dashboardQuery.data?.totalMinutes || 0],
+    queryFn: () => readBadges(wallet.account),
+    enabled: readyForReads && Boolean(dashboardQuery.data)
+  });
+
   const liveEventsQuery = useQuery({
     queryKey: ["contract-events", configuredContractId],
     queryFn: () => readContractEvents(6),
@@ -230,6 +244,7 @@ export default function App() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["dashboard", wallet.account] }),
         queryClient.invalidateQueries({ queryKey: ["sessions", wallet.account] }),
+        queryClient.invalidateQueries({ queryKey: ["badges", wallet.account] }),
         queryClient.invalidateQueries({ queryKey: ["contract-events"] })
       ]);
 
@@ -675,6 +690,46 @@ export default function App() {
               {logSessionMutation.isPending ? "Logging..." : "Log session"}
             </button>
           </form>
+        </Panel>
+      </section>
+
+      <section className="panel-grid panel-grid-single">
+        <Panel
+          eyebrow="Achievements"
+          title="On-Chain Badges"
+          body="Milestone rewards earned through study achievements on the rewards contract via inter-contract communication (ICC)."
+          emphasis="teal"
+        >
+          {badgesQuery.isLoading ? (
+            <ActivitySkeleton />
+          ) : badgesQuery.data?.length ? (
+            <div className="badge-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+              {badgesQuery.data.map((badgeId) => {
+                const def = badgeDefinitions[badgeId] || { name: `Badge #${badgeId}`, desc: "Milestone unlocked", color: "#71717a", icon: "🏆" };
+                return (
+                  <article className="badge-card" key={badgeId} style={{
+                    padding: '1.5rem',
+                    borderRadius: '24px',
+                    border: '1px solid rgba(16, 33, 31, 0.1)',
+                    background: 'rgba(255, 255, 255, 0.65)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+                  }}>
+                    <span style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{def.icon}</span>
+                    <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 600, color: '#11211f' }}>{def.name}</h3>
+                    <p style={{ margin: 0, fontSize: '0.88rem', color: 'rgba(16, 33, 31, 0.7)' }}>{def.desc}</p>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="empty-state">
+              No on-chain badges earned yet. Reach milestones of 60m, 300m, or 1000m total study time to be awarded milestone badges.
+            </p>
+          )}
         </Panel>
       </section>
 

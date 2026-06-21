@@ -23,6 +23,7 @@ const fileContents = `export const skillSprintConfig = ${JSON.stringify(
   {
     contractName: "SkillSprintLedger",
     fallbackContractId: deployment?.contractId || "",
+    fallbackRewardsContractId: deployment?.rewardsContractId || "",
     fallbackNetwork: deployment?.network || "testnet",
     limits: {
       minSessionMinutes: 5,

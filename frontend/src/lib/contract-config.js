@@ -1,6 +1,7 @@
 export const skillSprintConfig = {
   "contractName": "SkillSprintLedger",
-  "fallbackContractId": "CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2",
+  "fallbackContractId": "CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G",
+  "fallbackRewardsContractId": "CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM",
   "fallbackNetwork": "testnet",
   "limits": {
     "minSessionMinutes": 5,
