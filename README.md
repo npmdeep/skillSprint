@@ -6,15 +6,16 @@ SkillSprint Ledger is a production-ready Stellar Soroban mini-dApp for tracking 
 
 ## Submission Links
 
-- Live demo: `https://skillsprint-ledger.vercel.app`
-- CI workflow: `https://github.com/balluPiku/skillsprint-ledger/actions/workflows/ci.yml`
-- Stellar Lab Ledger contract page: `https://lab.stellar.org/r/testnet/contract/CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G`
-- Stellar Lab Rewards contract page: `https://lab.stellar.org/r/testnet/contract/CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM`
-- Soroban Rewards Deploy TX: `https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523`
-- Soroban Ledger Deploy TX: `https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da`
-- Rewards Initialize TX: `https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88`
-- Ledger Initialize TX: `https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a`
-- Demo video: `https://drive.google.com/file/d/1JCLe6s5ADPzqODZ_hu4ph-flDoEEcOaI/view?usp=sharing`
+- Live demo: [skillsprint-ledger.vercel.app](https://skillsprint-ledger.vercel.app)
+- CI workflow: [GitHub Actions Workflow](https://github.com/balluPiku/skillsprint-ledger/actions/workflows/ci.yml)
+- Stellar Lab Ledger contract page: [CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G](https://lab.stellar.org/r/testnet/contract/CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G)
+- Stellar Lab Rewards contract page: [CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM](https://lab.stellar.org/r/testnet/contract/CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM)
+- Soroban Rewards Deploy TX: [6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523](https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523)
+- Soroban Ledger Deploy TX: [fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da](https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da)
+- Rewards Initialize TX: [aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88](https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88)
+- Ledger Initialize TX: [4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a](https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a)
+- Demo video: [Google Drive Link](https://drive.google.com/file/d/1JCLe6s5ADPzqODZ_hu4ph-flDoEEcOaI/view?usp=sharing)
+
 
 ## Screenshots
 
