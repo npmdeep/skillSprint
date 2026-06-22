@@ -703,24 +703,14 @@ export default function App() {
           {badgesQuery.isLoading ? (
             <ActivitySkeleton />
           ) : badgesQuery.data?.length ? (
-            <div className="badge-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div className="badge-grid">
               {badgesQuery.data.map((badgeId) => {
                 const def = badgeDefinitions[badgeId] || { name: `Badge #${badgeId}`, desc: "Milestone unlocked", color: "#71717a", icon: "🏆" };
                 return (
-                  <article className="badge-card" key={badgeId} style={{
-                    padding: '1.5rem',
-                    borderRadius: '24px',
-                    border: '1px solid rgba(16, 33, 31, 0.1)',
-                    background: 'rgba(255, 255, 255, 0.65)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                  }}>
-                    <span style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>{def.icon}</span>
-                    <h3 style={{ margin: '0 0 0.25rem', fontSize: '1.1rem', fontWeight: 600, color: '#11211f' }}>{def.name}</h3>
-                    <p style={{ margin: 0, fontSize: '0.88rem', color: 'rgba(16, 33, 31, 0.7)' }}>{def.desc}</p>
+                  <article className="badge-card" key={badgeId}>
+                    <span className="badge-icon-wrapper">{def.icon}</span>
+                    <h3>{def.name}</h3>
+                    <p>{def.desc}</p>
                   </article>
                 );
               })}
