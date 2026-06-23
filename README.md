@@ -86,8 +86,9 @@ STELLAR_ACCOUNT=alice
 STELLAR_NETWORK=testnet
 STELLAR_CONTRACT_ALIAS=skill_sprint_ledger
 VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
-VITE_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
-VITE_CONTRACT_ID=CACOOTSVOLSTXCEIG7YJZAI7KYCWUQRVUPN5YE7OY33RP2F6OL5ZMJW2
+VITE_STELLAR_NETWORK_PASSPHRASE="Test SDF Network ; September 2015"
+VITE_CONTRACT_ID=CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G
+VITE_REWARDS_CONTRACT_ID=CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM
 ```
 
 For frontend-only configuration, copy `frontend/.env.example` to `frontend/.env`.
@@ -205,4 +206,5 @@ Completed locally:
 - Mobile responsive screenshot: yes
 - CI/CD workflow configured: yes
 - Contract address documented: yes
-- Minimum 8 meaningful commits: yes
+- Minimum 10+ meaningful commits: yes (21 commits on main branch)
+
