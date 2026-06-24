@@ -40,69 +40,35 @@ const emptyTx = {
 };
 
 const badgeDefinitions = {
-  1: { name: "Bronze Learner", desc: "Logged 60+ minutes of total study time", color: "#8a5a36", icon: "🥉" },
-  2: { name: "Silver Learner", desc: "Logged 300+ minutes of total study time", color: "#71717a", icon: "🥈" },
-  3: { name: "Gold Learner", desc: "Logged 1000+ minutes of total study time", color: "#b45309", icon: "🥇" }
+  1: { name: "Bronze Learner", desc: "Logged 60+ minutes of total study time", icon: "🥉" },
+  2: { name: "Silver Learner", desc: "Logged 300+ minutes of total study time", icon: "🥈" },
+  3: { name: "Gold Learner", desc: "Logged 1000+ minutes of total study time", icon: "🥇" }
 };
 
-function Panel({ eyebrow, title, body, children, emphasis = "coral" }) {
-  return (
-    <section className={`panel panel-${emphasis}`}>
-      <div className="panel-head">
-        <p className="eyebrow">{eyebrow}</p>
-        <h2>{title}</h2>
-        {body ? <p className="panel-body">{body}</p> : null}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function MetricCard({ label, value, note, loading = false }) {
+function MetricCard({ label, value, note }) {
   return (
     <article className="metric-card">
       <p className="metric-label">{label}</p>
-      <div className={loading ? "skeleton skeleton-metric" : "metric-value"}>{loading ? "" : value}</div>
-      <p className="metric-note">{loading ? <span className="skeleton skeleton-note" /> : note}</p>
+      <div className="metric-value">{value}</div>
+      <p className="metric-note">{note}</p>
     </article>
-  );
-}
-
-function ActivitySkeleton() {
-  return (
-    <div className="session-list">
-      {Array.from({ length: 3 }, (_, index) => (
-        <div className="session-card session-skeleton" key={index}>
-          <span className="skeleton skeleton-title" />
-          <span className="skeleton skeleton-note" />
-          <span className="skeleton skeleton-badge" />
-        </div>
-      ))}
-    </div>
   );
 }
 
 function EventCard({ event }) {
   return (
     <article className="event-card">
-      <div className="event-head">
-        <div>
-          <p className="event-label">{event.label}</p>
-          <p className="event-meta">
-            {shortAddress(event.learner)} • {new Date(event.occurredAt).toLocaleString()}
-          </p>
-        </div>
-        <a
-          className="event-link"
-          href={`https://stellar.expert/explorer/testnet/tx/${event.txHash}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Tx
+      <div className="event-header">
+        <span className="event-title">{event.label}</span>
+        <span className="event-time">{new Date(event.occurredAt).toLocaleTimeString()}</span>
+      </div>
+      <p className="event-details">{event.summary}</p>
+      <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+        <span style={{ color: 'var(--ink-muted)' }}>Learner: {shortAddress(event.learner)}</span>
+        <a className="event-link" href={`https://stellar.expert/explorer/testnet/tx/${event.txHash}`} target="_blank" rel="noreferrer">
+          Explorer ↗
         </a>
       </div>
-      <p className="event-summary">{event.summary}</p>
-      <p className="event-meta">Ledger {event.ledger}</p>
     </article>
   );
 }
@@ -129,9 +95,7 @@ export default function App() {
     async function syncWallet() {
       try {
         const nextState = await discoverWalletState();
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setWallet((current) => ({
           ...current,
@@ -140,10 +104,7 @@ export default function App() {
           error: ""
         }));
       } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
+        if (!isMounted) return;
         setWallet((current) => ({
           ...current,
           isConnecting: false,
@@ -152,21 +113,28 @@ export default function App() {
       }
     }
 
-    syncWallet();
-
-    if (typeof window !== "undefined" && freighterInstalled) {
-      watcher = new WatchWalletChanges(3000);
-      watcher.watch(() => {
-        setTxState(emptyTx);
-        syncWallet();
-      });
+    async function startWatcher() {
+      if (typeof window === "undefined") return;
+      try {
+        const { WatchWalletChanges } = await import("@stellar/freighter-api");
+        if (!isMounted) return;
+        watcher = new WatchWalletChanges(3000);
+        watcher.watch(() => {
+          syncWallet();
+        });
+      } catch {
+        watcher = null;
+      }
     }
+
+    syncWallet();
+    startWatcher();
 
     return () => {
       isMounted = false;
       watcher?.stop?.();
     };
-  }, [freighterInstalled]);
+  }, []);
 
   const wrongNetwork =
     Boolean(wallet.networkPassphrase) && wallet.networkPassphrase !== configuredNetworkPassphrase;
@@ -191,19 +159,15 @@ export default function App() {
   });
 
   const liveEventsQuery = useQuery({
-    queryKey: ["contract-events", configuredContractId],
-    queryFn: () => readContractEvents(6),
+    queryKey: ["live-events", configuredContractId],
+    queryFn: () => readContractEvents(10),
     enabled: hasContractConfig(),
-    staleTime: 8_000,
-    refetchInterval: 12_000,
-    refetchIntervalInBackground: false
+    staleTime: 10_000,
+    refetchInterval: 15_000
   });
 
   useEffect(() => {
-    if (!dashboardQuery.data) {
-      return;
-    }
-
+    if (!dashboardQuery.data) return;
     setGoalForm(String(dashboardQuery.data.weeklyGoalMinutes));
     setProfileForm((current) => ({
       displayName: current.displayName || dashboardQuery.data.displayName,
@@ -213,21 +177,14 @@ export default function App() {
 
   const dashboard = dashboardQuery.data;
   const weeklyProgress = useMemo(() => {
-    if (!dashboard?.weeklyGoalMinutes) {
-      return 0;
-    }
-
-    return Math.min(
-      100,
-      Math.round((dashboard.minutesThisWeek / dashboard.weeklyGoalMinutes) * 100)
-    );
+    if (!dashboard?.weeklyGoalMinutes) return 0;
+    return Math.min(100, Math.round((dashboard.minutesThisWeek / dashboard.weeklyGoalMinutes) * 100));
   }, [dashboard]);
 
   async function runLedgerAction(action, pendingMessage, successMessage) {
     if (!wallet.account) {
       throw new Error("Connect Freighter before sending a transaction.");
     }
-
     if (wrongNetwork) {
       throw new Error(`Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`);
     }
@@ -245,7 +202,7 @@ export default function App() {
         queryClient.invalidateQueries({ queryKey: ["dashboard", wallet.account] }),
         queryClient.invalidateQueries({ queryKey: ["sessions", wallet.account] }),
         queryClient.invalidateQueries({ queryKey: ["badges", wallet.account] }),
-        queryClient.invalidateQueries({ queryKey: ["contract-events"] })
+        queryClient.invalidateQueries({ queryKey: ["live-events", configuredContractId] })
       ]);
 
       setTxState({
@@ -268,8 +225,8 @@ export default function App() {
     mutationFn: ({ displayName, weeklyGoalMinutes }) =>
       runLedgerAction(
         () => saveProfile(wallet.account, displayName, weeklyGoalMinutes),
-        "Creating your learner profile on Stellar...",
-        "Profile saved on Soroban."
+        "Saving your learner profile on Stellar...",
+        "Learner profile confirmed."
       )
   });
 
@@ -277,8 +234,8 @@ export default function App() {
     mutationFn: ({ weeklyGoalMinutes }) =>
       runLedgerAction(
         () => updateWeeklyGoal(wallet.account, weeklyGoalMinutes),
-        "Updating your weekly target on Stellar...",
-        "Weekly goal updated."
+        "Updating your study targets...",
+        "Study goal updated."
       )
   });
 
@@ -286,8 +243,8 @@ export default function App() {
     mutationFn: ({ topic, minutesSpent }) =>
       runLedgerAction(
         () => logSession(wallet.account, topic, minutesSpent),
-        "Logging your study sprint on Stellar...",
-        "Study session logged."
+        "Submitting your study session...",
+        "Study sprint confirmed on-chain."
       )
   });
 
@@ -295,14 +252,6 @@ export default function App() {
     saveProfileMutation.isPending || updateGoalMutation.isPending || logSessionMutation.isPending;
 
   async function handleConnectWallet() {
-    if (!freighterInstalled) {
-      setWallet((current) => ({
-        ...current,
-        error: "Freighter is not installed in this browser."
-      }));
-      return;
-    }
-
     setWallet((current) => ({
       ...current,
       isConnecting: true,
@@ -316,6 +265,10 @@ export default function App() {
         ...nextState,
         isConnecting: false
       });
+      import("posthog-js").then(({ default: posthog }) => {
+        posthog.identify(nextState.address || nextState.account);
+        posthog.capture("wallet_connected", { account: nextState.address || nextState.account });
+      }).catch(() => {});
     } catch (error) {
       setWallet((current) => ({
         ...current,
@@ -327,87 +280,67 @@ export default function App() {
 
   function handleProfileSubmit(event) {
     event.preventDefault();
-
     const displayName = profileForm.displayName.trim();
     const weeklyGoalMinutes = Number(profileForm.weeklyGoalMinutes);
 
     if (!displayName) {
-      setTxState({
-        status: "error",
-        message: "Add a display name before saving your profile.",
-        hash: ""
-      });
+      alert("Add a display name before saving your profile.");
       return;
     }
 
     if (Number.isNaN(weeklyGoalMinutes) || weeklyGoalMinutes < 30 || weeklyGoalMinutes > 5000) {
-      setTxState({
-        status: "error",
-        message: "Weekly goal must stay between 30 and 5000 minutes.",
-        hash: ""
-      });
+      alert("Weekly goal must stay between 30 and 5000 minutes.");
       return;
     }
 
-    saveProfileMutation.mutate({
-      displayName,
-      weeklyGoalMinutes
-    });
+    import("posthog-js").then(({ default: posthog }) => {
+      posthog.capture("profile_saved_initiated", { displayName, weeklyGoalMinutes });
+    }).catch(() => {});
+
+    saveProfileMutation.mutate({ displayName, weeklyGoalMinutes });
   }
 
   function handleGoalSubmit(event) {
     event.preventDefault();
-
     const weeklyGoalMinutes = Number(goalForm);
+
     if (Number.isNaN(weeklyGoalMinutes) || weeklyGoalMinutes < 30 || weeklyGoalMinutes > 5000) {
-      setTxState({
-        status: "error",
-        message: "Pick a weekly goal between 30 and 5000 minutes.",
-        hash: ""
-      });
+      alert("Weekly goal must stay between 30 and 5000 minutes.");
       return;
     }
 
-    updateGoalMutation.mutate({
-      weeklyGoalMinutes
-    });
+    import("posthog-js").then(({ default: posthog }) => {
+      posthog.capture("goal_updated_initiated", { weeklyGoalMinutes });
+    }).catch(() => {});
+
+    updateGoalMutation.mutate({ weeklyGoalMinutes });
   }
 
   function handleSessionSubmit(event) {
     event.preventDefault();
-
     const topic = sessionForm.topic.trim();
     const minutesSpent = Number(sessionForm.minutesSpent);
 
     if (!topic) {
-      setTxState({
-        status: "error",
-        message: "Give this study sprint a topic so it is meaningful on-chain.",
-        hash: ""
-      });
+      alert("Give this study sprint a topic so it is meaningful on-chain.");
       return;
     }
 
     if (Number.isNaN(minutesSpent) || minutesSpent < 5 || minutesSpent > 480) {
-      setTxState({
-        status: "error",
-        message: "Study sessions must be between 5 and 480 minutes.",
-        hash: ""
-      });
+      alert("Study sessions must be between 5 and 480 minutes.");
       return;
     }
 
-    logSessionMutation.mutate({
-      topic,
-      minutesSpent
-    });
+    import("posthog-js").then(({ default: posthog }) => {
+      posthog.capture("study_session_logged_initiated", { topic, minutesSpent });
+    }).catch(() => {});
+
+    logSessionMutation.mutate({ topic, minutesSpent });
   }
 
   const txExplorerLink = getExplorerLink(wallet.networkPassphrase, txState.hash);
   const contractExplorerLink = configuredContractId
-    ? configuredNetworkPassphrase === "Public Global Stellar Network ; September 2015"
-      ? `https://lab.stellar.org/r/public/contract/${configuredContractId}`
-      : `https://lab.stellar.org/r/testnet/contract/${configuredContractId}`
+    ? `https://stellar.expert/explorer/testnet/contract/${configuredContractId}`
     : "";
 
   const statusMessage =
@@ -422,378 +355,305 @@ export default function App() {
             : "Deploy the Soroban contract and export the frontend config before using the app."));
 
   return (
-    <div className="app-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-
-      <header className="hero">
-        <div className="hero-copy">
-          <p className="kicker">Soroban mini-dApp build</p>
-          <h1>SkillSprint Ledger</h1>
-          <p className="lead">
-            Turn study effort into on-chain proof on Stellar. Set a weekly goal, log focused
-            learning sessions, and monitor contract events in near real time from Soroban RPC.
-          </p>
-
-          <div className="hero-actions">
-            {freighterInstalled ? (
-              <button
-                className="button button-primary"
-                onClick={handleConnectWallet}
-                disabled={wallet.isConnecting}
-              >
-                {wallet.isConnecting
-                  ? "Connecting..."
-                  : wallet.account
-                    ? "Wallet Connected"
-                    : "Connect Freighter"}
-              </button>
+    <>
+      <nav className="top-nav">
+        <div className="top-nav-in">
+          <a className="brand" href="#top">
+            SkillSprint <span>Ledger</span>
+          </a>
+          <div className="topbar-actions">
+            <span className="network-tag">{getNetworkLabel(configuredNetworkPassphrase)}</span>
+            {wallet.account ? (
+              <span className="network-tag" style={{ border: '1px solid var(--border)' }}>
+                {shortAddress(wallet.account)}
+              </span>
             ) : (
-              <a
-                className="button button-primary"
-                href="https://www.freighter.app/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Install Freighter
-              </a>
+              <button className="button button-secondary" style={{ padding: '0.5rem 1rem' }} onClick={handleConnectWallet}>
+                Connect Wallet
+              </button>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      <div className="app-shell">
+        {/* ---------------- DISCONNECTED STATE / LANDING PAGE ---------------- */}
+        {!wallet.account && (
+          <div className="landing-hero">
+            <div className="landing-copy">
+              <h1>
+                Proof of Study<br />
+                Secured on <span>Stellar</span>.
+              </h1>
+              <p className="lead">
+                Turn your learning time into verifiable achievements. Define weekly focus targets, log your learning sessions on-chain, and earn milestone badges verified by Soroban smart contracts.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button className="button button-primary" onClick={handleConnectWallet}>
+                  Connect Wallet
+                </button>
+                {contractExplorerLink && (
+                  <a className="button button-secondary" href={contractExplorerLink} target="_blank" rel="noreferrer">
+                    View Deployed Contract
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div className="panel" style={{ background: 'var(--bg-sand)', padding: '2.5rem' }}>
+              <h2 style={{ fontSize: '2.2rem', marginBottom: '2rem', textAlign: 'center' }}>How it works</h2>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem' }}>
+                {/* Step 1 Graphic Card */}
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', transition: 'all 0.2s' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>01</div>
+                    <h3 style={{ fontSize: '1.25rem' }}>Link Wallet</h3>
+                  </div>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '6px', padding: '0.75rem', background: 'var(--bg-sand)', fontSize: '0.8rem', fontFamily: 'JetBrains Mono', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#bf4f36', display: 'inline-block' }}></span>
+                    <span>Freighter Linked: G...X4Z9</span>
+                  </div>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Connect your Freighter browser extension to securely verify your study identity without centralized passwords.</p>
+                </div>
+
+                {/* Step 2 Graphic Card */}
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>02</div>
+                    <h3 style={{ fontSize: '1.25rem' }}>Log Sprints</h3>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.75rem', background: 'var(--bg-sand)', fontSize: '0.8rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '500' }}>
+                      <span>Topic: Rust CLI</span>
+                      <span style={{ color: '#3b7c70' }}>+45 mins</span>
+                    </div>
+                    <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <span style={{ display: 'block', height: '100%', width: '75%', background: '#3b7c70' }}></span>
+                    </div>
+                  </div>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Input your study topics and minutes spent. Focus sessions are logged directly to the public Stellar ledger.</p>
+                </div>
+
+                {/* Step 3 Graphic Card */}
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>03</div>
+                    <h3 style={{ fontSize: '1.25rem' }}>Earn Badges</h3>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.5rem', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.5rem', background: 'var(--bg-sand)' }}>
+                    <span style={{ fontSize: '1.8rem', opacity: '0.3' }}>🥉</span>
+                    <span style={{ fontSize: '2.4rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.08))' }}>🥈</span>
+                    <span style={{ fontSize: '1.8rem', opacity: '0.3' }}>🥇</span>
+                  </div>
+                  <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Pass total study thresholds (60m, 300m, 1000m) to automatically earn milestone badges awarded via ICC.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ---------------- CONNECTED STATE / WORKSPACE DASHBOARD ---------------- */}
+        {wallet.account && (
+          <div className="dashboard-view">
+            {statusMessage && (
+              <div className="status-banner">
+                <span>{statusMessage}</span>
+                {txExplorerLink && (
+                  <a className="event-link" href={txExplorerLink} target="_blank" rel="noreferrer">
+                    Tx details ↗
+                  </a>
+                )}
+              </div>
             )}
 
-            {contractExplorerLink ? (
-              <a className="button button-secondary" href={contractExplorerLink} target="_blank" rel="noreferrer">
-                View contract
-              </a>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="hero-card">
-          <div className="hero-chip-row">
-            <span className="chip">{wallet.account ? shortAddress(wallet.account) : "No wallet yet"}</span>
-            <span className="chip">
-              {wallet.networkPassphrase
-                ? getNetworkLabel(wallet.networkPassphrase)
-                : "Wallet network pending"}
-            </span>
-            <span className="chip chip-live">
-              <span className="live-dot" />
-              Live RPC event feed
-            </span>
-          </div>
-
-          <div className="hero-stat">
-            <span>Contract ID</span>
-            <strong>{configuredContractId ? shortAddress(configuredContractId) : "Not deployed"}</strong>
-          </div>
-
-          <div className="progress-shell">
-            <div className="progress-labels">
-              <span>Weekly momentum</span>
-              <span>{dashboard ? `${weeklyProgress}%` : "0%"}</span>
+            <div className="metrics-row">
+              <MetricCard
+                label="Hours Invested"
+                value={dashboard ? formatMinutes(dashboard.totalMinutes) : "0m"}
+                note={dashboard ? `${dashboard.sessionCount} logged sessions` : "Starts after your first session"}
+              />
+              <MetricCard
+                label="Weekly Progress"
+                value={dashboard ? formatMinutes(dashboard.minutesThisWeek) : "0m"}
+                note={
+                  dashboard
+                    ? `${Math.max(dashboard.weeklyGoalMinutes - dashboard.minutesThisWeek, 0)} minutes to goal`
+                    : "Set your target and begin logging"
+                }
+              />
+              <MetricCard
+                label="Current Streak"
+                value={dashboard ? `${dashboard.currentStreak} day${dashboard.currentStreak === 1 ? "" : "s"}` : "0 days"}
+                note={dashboard?.goalReachedThisWeek ? "Goal reached this week!" : "Keep the streak alive"}
+              />
+              <MetricCard
+                label="Identity Profile"
+                value={dashboard?.displayName || "Anonymous Learner"}
+                note={shortAddress(wallet.account)}
+              />
             </div>
-            <div className="progress-track">
-              <span className="progress-fill" style={{ width: `${weeklyProgress}%` }} />
-            </div>
-          </div>
 
-          <p className="hero-note">
-            Built for study groups, bootcamp learners, and accountability-friendly progress on
-            Soroban with deployment-safe frontend builds.
-          </p>
-        </div>
-      </header>
+            <div className="dashboard-grid">
+              <div className="main-column">
+                <div className="panel">
+                  <h2 className="panel-title">Log a Focused Study Sprint</h2>
+                  <p className="panel-subtitle">Record your session. Achievements and streaks will update automatically.</p>
+                  <form className="form-grid" onSubmit={handleSessionSubmit}>
+                    <div className="form-field">
+                      <span>Topic or Subject</span>
+                      <input
+                        type="text"
+                        placeholder="e.g., Soroban Storage Types"
+                        value={sessionForm.topic}
+                        onChange={(event) => setSessionForm((current) => ({ ...current, topic: event.target.value }))}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <span>Minutes Studied</span>
+                      <input
+                        type="number"
+                        min="5"
+                        max="480"
+                        step="5"
+                        value={sessionForm.minutesSpent}
+                        onChange={(event) => setSessionForm((current) => ({ ...current, minutesSpent: event.target.value }))}
+                      />
+                    </div>
+                    <button className="button button-primary" type="submit" disabled={anyMutationPending}>
+                      {logSessionMutation.isPending ? "Logging..." : "Log Sprint"}
+                    </button>
+                  </form>
+                </div>
 
-      <section className="status-banner">
-        <div>
-          <p className="status-label">Status</p>
-          <p className="status-copy">{statusMessage}</p>
-        </div>
+                <div className="panel">
+                  <h2 className="panel-title">On-Chain Badges</h2>
+                  <p className="panel-subtitle">Milestone achievements earned on the rewards contract via ICC calls.</p>
+                  {badgesQuery.data?.length ? (
+                    <div className="badge-grid">
+                      {badgesQuery.data.map((badgeId) => {
+                        const def = badgeDefinitions[badgeId] || { name: `Badge #${badgeId}`, desc: "Milestone unlocked", icon: "🏆" };
+                        return (
+                          <article className="badge-card" key={badgeId}>
+                            <span className="badge-icon">{def.icon}</span>
+                            <h3>{def.name}</h3>
+                            <p>{def.desc}</p>
+                          </article>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p style={{ color: 'var(--ink-muted)', fontSize: '0.95rem' }}>
+                      No badges earned yet. Reach milestones of 60m, 300m, or 1000m total study time to be awarded milestone badges.
+                    </p>
+                  )}
+                </div>
+              </div>
 
-        <div className="status-actions">
-          {contractExplorerLink ? (
-            <a className="status-link" href={contractExplorerLink} target="_blank" rel="noreferrer">
-              Contract
-            </a>
-          ) : null}
-          {txExplorerLink ? (
-            <a className="status-link" href={txExplorerLink} target="_blank" rel="noreferrer">
-              Last transaction
-            </a>
-          ) : null}
-        </div>
-      </section>
+              <div className="side-column">
+                <div className="panel">
+                  <h2 className="panel-title">Configure Profile</h2>
+                  <p className="panel-subtitle">Save a public display name and configure weekly targets.</p>
+                  <form className="form-grid" onSubmit={handleProfileSubmit}>
+                    <div className="form-field">
+                      <span>Display Name</span>
+                      <input
+                        type="text"
+                        placeholder="e.g., RustPilot"
+                        value={profileForm.displayName}
+                        onChange={(event) => setProfileForm((current) => ({ ...current, displayName: event.target.value }))}
+                      />
+                    </div>
+                    <div className="form-field">
+                      <span>Weekly Goal (Minutes)</span>
+                      <input
+                        type="number"
+                        min="30"
+                        max="5000"
+                        step="5"
+                        value={profileForm.weeklyGoalMinutes}
+                        onChange={(event) => setProfileForm((current) => ({ ...current, weeklyGoalMinutes: event.target.value }))}
+                      />
+                    </div>
+                    <button className="button button-secondary" type="submit" disabled={anyMutationPending}>
+                      {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
+                    </button>
+                  </form>
+                </div>
 
-      <section className="metrics-grid">
-        <MetricCard
-          label="Hours invested"
-          value={dashboard ? formatMinutes(dashboard.totalMinutes) : "0m"}
-          note={dashboard ? `${dashboard.sessionCount} logged sessions` : "Starts after your first session"}
-          loading={dashboardQuery.isLoading}
-        />
-        <MetricCard
-          label="Weekly progress"
-          value={dashboard ? formatMinutes(dashboard.minutesThisWeek) : "0m"}
-          note={
-            dashboard
-              ? `${Math.max(dashboard.weeklyGoalMinutes - dashboard.minutesThisWeek, 0)} minutes to goal`
-              : "Set your target and begin logging"
-          }
-          loading={dashboardQuery.isLoading}
-        />
-        <MetricCard
-          label="Current streak"
-          value={dashboard ? `${dashboard.currentStreak} day${dashboard.currentStreak === 1 ? "" : "s"}` : "0 days"}
-          note={
-            dashboard
-              ? dashboard.goalReachedThisWeek
-                ? "Goal reached this week"
-                : "Keep the streak alive"
-              : "Consecutive-day activity tracker"
-          }
-          loading={dashboardQuery.isLoading}
-        />
-        <MetricCard
-          label="Study identity"
-          value={dashboard?.displayName || "No profile"}
-          note={wallet.account ? shortAddress(wallet.account) : "Connect to personalize"}
-          loading={dashboardQuery.isLoading}
-        />
-      </section>
-
-      {!hasContractConfig() ? (
-        <Panel
-          eyebrow="Deployment setup"
-          title="One Soroban deploy unlocks the full app"
-          body="The frontend is wired and ready. Build the Rust contract, deploy it with Stellar CLI, and export the contract ID for the UI."
-          emphasis="teal"
-        >
-          <div className="code-stack">
-            <code>stellar keys generate alice --network testnet --fund</code>
-            <code>npm run contract:build</code>
-            <code>npm run contract:deploy</code>
-            <code>npm run export:frontend</code>
-          </div>
-        </Panel>
-      ) : null}
-
-      <section className="panel-grid">
-        <Panel
-          eyebrow="Action one"
-          title="Create or refresh your learner profile"
-          body="Save a public display name plus the number of study minutes you want to hit every week."
-        >
-          <form className="form-grid" onSubmit={handleProfileSubmit}>
-            <label>
-              <span>Display name</span>
-              <input
-                type="text"
-                placeholder="Protocol Pilot"
-                value={profileForm.displayName}
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, displayName: event.target.value }))
-                }
-              />
-            </label>
-            <label>
-              <span>Weekly goal (minutes)</span>
-              <input
-                type="number"
-                min="30"
-                max="5000"
-                step="5"
-                value={profileForm.weeklyGoalMinutes}
-                onChange={(event) =>
-                  setProfileForm((current) => ({
-                    ...current,
-                    weeklyGoalMinutes: event.target.value
-                  }))
-                }
-              />
-            </label>
-            <button
-              className="button button-primary"
-              type="submit"
-              disabled={anyMutationPending || !wallet.account || !hasContractConfig()}
-            >
-              {saveProfileMutation.isPending ? "Saving..." : "Save profile"}
-            </button>
-          </form>
-        </Panel>
-
-        <Panel
-          eyebrow="Action two"
-          title="Tune your weekly target"
-          body="Update the goal whenever your workload changes. Progress resets each new on-chain week."
-          emphasis="teal"
-        >
-          <form className="form-grid" onSubmit={handleGoalSubmit}>
-            <label>
-              <span>New weekly goal</span>
-              <input
-                type="number"
-                min="30"
-                max="5000"
-                step="5"
-                value={goalForm}
-                onChange={(event) => setGoalForm(event.target.value)}
-              />
-            </label>
-            <button
-              className="button button-secondary"
-              type="submit"
-              disabled={anyMutationPending || !wallet.account || !dashboard || !hasContractConfig()}
-            >
-              {updateGoalMutation.isPending ? "Updating..." : "Update goal"}
-            </button>
-          </form>
-        </Panel>
-
-        <Panel
-          eyebrow="Action three"
-          title="Log a focused study sprint"
-          body="Record the topic, minutes spent, and streak impact. Recent sessions and live RPC events refresh after each confirmed transaction."
-          emphasis="slate"
-        >
-          <form className="form-grid" onSubmit={handleSessionSubmit}>
-            <label>
-              <span>Topic</span>
-              <input
-                type="text"
-                placeholder="Contract storage"
-                value={sessionForm.topic}
-                onChange={(event) =>
-                  setSessionForm((current) => ({ ...current, topic: event.target.value }))
-                }
-              />
-            </label>
-            <label>
-              <span>Minutes studied</span>
-              <input
-                type="number"
-                min="5"
-                max="480"
-                step="5"
-                value={sessionForm.minutesSpent}
-                onChange={(event) =>
-                  setSessionForm((current) => ({
-                    ...current,
-                    minutesSpent: event.target.value
-                  }))
-                }
-              />
-            </label>
-            <button
-              className="button button-primary"
-              type="submit"
-              disabled={anyMutationPending || !wallet.account || !dashboard || !hasContractConfig()}
-            >
-              {logSessionMutation.isPending ? "Logging..." : "Log session"}
-            </button>
-          </form>
-        </Panel>
-      </section>
-
-      <section className="panel-grid panel-grid-single">
-        <Panel
-          eyebrow="Achievements"
-          title="On-Chain Badges"
-          body="Milestone rewards earned through study achievements on the rewards contract via inter-contract communication (ICC)."
-          emphasis="teal"
-        >
-          {badgesQuery.isLoading ? (
-            <ActivitySkeleton />
-          ) : badgesQuery.data?.length ? (
-            <div className="badge-grid">
-              {badgesQuery.data.map((badgeId) => {
-                const def = badgeDefinitions[badgeId] || { name: `Badge #${badgeId}`, desc: "Milestone unlocked", color: "#71717a", icon: "🏆" };
-                return (
-                  <article className="badge-card" key={badgeId}>
-                    <span className="badge-icon-wrapper">{def.icon}</span>
-                    <h3>{def.name}</h3>
-                    <p>{def.desc}</p>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="empty-state">
-              No on-chain badges earned yet. Reach milestones of 60m, 300m, or 1000m total study time to be awarded milestone badges.
-            </p>
-          )}
-        </Panel>
-      </section>
-
-      <section className="panel-grid panel-grid-bottom">
-        <Panel
-          eyebrow="Readable history"
-          title="Recent on-chain sessions"
-          body="The feed below pulls the latest five sessions and refreshes after each confirmed transaction."
-          emphasis="slate"
-        >
-          {sessionsQuery.isLoading ? (
-            <ActivitySkeleton />
-          ) : sessionsQuery.data?.length ? (
-            <div className="session-list">
-              {sessionsQuery.data.map((session) => (
-                <article className="session-card" key={session.id}>
-                  <div>
-                    <h3>{session.topic}</h3>
-                    <p>{formatDate(session.timestamp)}</p>
+                <div className="panel">
+                  <h2 className="panel-title">Weekly target progress</h2>
+                  <div className="hero-progress">
+                    <div className="progress-header">
+                      <span>Current Weekly Progress</span>
+                      <span>{weeklyProgress}%</span>
+                    </div>
+                    <div className="progress-track">
+                      <span className="progress-fill" style={{ width: `${weeklyProgress}%` }} />
+                    </div>
                   </div>
-                  <div className="session-meta">
-                    <span>{formatMinutes(session.minutesSpent)}</span>
-                    <span>Streak {session.streakAfterLog}</span>
-                  </div>
-                </article>
-              ))}
+                  <form className="form-grid" onSubmit={handleGoalSubmit}>
+                    <div className="form-field">
+                      <span>Quick adjust goal (mins)</span>
+                      <input
+                        type="number"
+                        min="30"
+                        max="5000"
+                        step="5"
+                        value={goalForm}
+                        onChange={(event) => setGoalForm(event.target.value)}
+                      />
+                    </div>
+                    <button className="button button-secondary" type="submit" disabled={anyMutationPending}>
+                      {updateGoalMutation.isPending ? "Updating..." : "Update Target"}
+                    </button>
+                  </form>
+                </div>
+              </div>
             </div>
-          ) : (
-            <p className="empty-state">
-              {dashboard
-                ? "Your feed will populate after the first logged study sprint."
-                : "Create a profile first, then your last five sessions will appear here."}
-            </p>
-          )}
-        </Panel>
 
-        <Panel
-          eyebrow="Real-time events"
-          title="Live contract activity"
-          body="Recent Soroban contract events are polled from RPC so you can verify writes without reloading the app."
-          emphasis="teal"
-        >
-          {liveEventsQuery.isLoading ? (
-            <ActivitySkeleton />
-          ) : liveEventsQuery.data?.length ? (
-            <div className="event-feed">
+            <div className="panel" style={{ marginTop: '2.5rem' }}>
+              <h2 className="panel-title">Recent Study Sessions</h2>
+              <p className="panel-subtitle">Latest study sessions logged on-chain.</p>
+              {sessionsQuery.data?.length ? (
+                <div className="session-list">
+                  {sessionsQuery.data.map((session) => (
+                    <article className="session-card" key={session.id}>
+                      <div>
+                        <div className="session-topic">{session.topic}</div>
+                        <div className="session-time">{formatDate(session.timestamp)}</div>
+                      </div>
+                      <div className="session-stats">
+                        <span>{formatMinutes(session.minutesSpent)}</span>
+                        <span className="network-tag" style={{ background: 'var(--bg-sand)' }}>
+                          Streak {session.streakAfterLog}
+                        </span>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ color: 'var(--ink-muted)' }}>No logged sessions found.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ---------------- EVENT STREAM (ALWAYS VISIBLE IN BOTTOM FOOTER SECTION) ---------------- */}
+        <div className="panel" style={{ marginTop: '3rem' }}>
+          <h2 className="panel-title">Live Blockchain Activity</h2>
+          <p className="panel-subtitle">Near real-time events polled directly from the Stellar Soroban RPC interface.</p>
+          {liveEventsQuery.data?.length ? (
+            <div className="event-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
               {liveEventsQuery.data.map((event) => (
                 <EventCard event={event} key={event.id} />
               ))}
             </div>
           ) : (
-            <p className="empty-state">
-              No recent contract events were found in the current ledger window. Submit a fresh
-              transaction to populate the live stream.
-            </p>
+            <p style={{ color: 'var(--ink-muted)', fontSize: '0.95rem' }}>No recent contract events polled.</p>
           )}
-        </Panel>
-      </section>
-
-      <section className="panel-grid panel-grid-single">
-        <Panel
-          eyebrow="Submission ready"
-          title="Why this now fits the advanced production brief"
-          body="The app now pairs Soroban contract writes with live event polling, deployment-safe frontend builds, CI checks, and mobile-first layout adjustments."
-          emphasis="slate"
-        >
-          <ul className="check-list">
-            <li>Rust Soroban contract with typed storage, events, and validation rules</li>
-            <li>Near real-time Soroban event streaming from RPC for fresh on-chain activity</li>
-            <li>Vercel-safe frontend build path plus GitHub Actions contract and frontend checks</li>
-            <li>Responsive cards, stacked mobile layouts, and runtime error boundary coverage</li>
-          </ul>
-        </Panel>
-      </section>
-    </div>
+        </div>
+      </div>
+    </>
   );
 }

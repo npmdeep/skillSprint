@@ -203,9 +203,6 @@ export async function discoverWalletState() {
 }
 
 export async function connectWallet() {
-  if (!isFreighterInstalled()) {
-    throw new Error("Freighter is not installed in this browser.");
-  }
 
   const permission = await setAllowed();
   if (permission.error) {
