@@ -181,11 +181,10 @@ input:focus {
   color: var(--ink-muted);
 }
 
-/* Landing Page Hero and layouts */
 .landing-hero {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 4rem;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 3.5rem;
   align-items: center;
   min-height: 70vh;
   margin-top: 2rem;
