@@ -379,16 +379,16 @@ export default function App() {
       <div className="app-shell">
         {/* ---------------- DISCONNECTED STATE / LANDING PAGE ---------------- */}
         {!wallet.account && (
-          <div className="landing-hero">
-            <div className="landing-copy">
-              <h1>
-                Proof of Study<br />
-                Secured on <span>Stellar</span>.
+          <div className="landing-layout" style={{ display: 'flex', flexDirection: 'column', gap: '4rem', marginTop: '2.5rem' }}>
+            {/* Hero Copy (Top Section) */}
+            <div className="landing-copy" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+              <h1 style={{ fontSize: 'clamp(3rem, 6vw, 4.2rem)', lineHeight: '1.1', marginBottom: '1.5rem' }}>
+                Proof of Study Secured on <span>Stellar</span>.
               </h1>
-              <p className="lead">
+              <p className="lead" style={{ fontSize: '1.2rem', marginBottom: '2.5rem', color: 'var(--ink-muted)' }}>
                 Turn your learning time into verifiable achievements. Define weekly focus targets, log your learning sessions on-chain, and earn milestone badges verified by Soroban smart contracts.
               </p>
-              <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                 <button className="button button-primary" onClick={handleConnectWallet}>
                   Connect Wallet
                 </button>
@@ -400,53 +400,51 @@ export default function App() {
               </div>
             </div>
 
-            <div className="panel" style={{ background: 'var(--bg-sand)', padding: '2.5rem' }}>
-              <h2 style={{ fontSize: '2.2rem', marginBottom: '2rem', textAlign: 'center' }}>How it works</h2>
+            {/* How it works (Bottom Section - Horizontal cards with small height) */}
+            <div className="panel" style={{ background: 'var(--bg-sand)', padding: '2rem 2.5rem' }}>
+              <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', textAlign: 'center' }}>How it works</h2>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 {/* Step 1 Graphic Card */}
-                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', transition: 'all 0.2s' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>01</div>
-                    <h3 style={{ fontSize: '1.25rem' }}>Link Wallet</h3>
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '0.5rem' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>01</div>
+                    <h3 style={{ fontSize: '1.15rem' }}>Link Wallet</h3>
                   </div>
-                  <div style={{ border: '1px solid var(--border)', borderRadius: '6px', padding: '0.75rem', background: 'var(--bg-sand)', fontSize: '0.8rem', fontFamily: 'JetBrains Mono', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#bf4f36', display: 'inline-block' }}></span>
-                    <span>Freighter Linked: G...X4Z9</span>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '6px', padding: '0.4rem 0.6rem', background: 'var(--bg-sand)', fontSize: '0.75rem', fontFamily: 'JetBrains Mono', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#bf4f36', display: 'inline-block' }}></span>
+                    <span>Linked: G...X4Z9</span>
                   </div>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Connect your Freighter browser extension to securely verify your study identity without centralized passwords.</p>
+                  <p style={{ fontSize: '0.85rem', lineHeight: '1.35', color: 'var(--ink-muted)' }}>Connect Freighter extension to securely verify study identity.</p>
                 </div>
 
                 {/* Step 2 Graphic Card */}
-                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>02</div>
-                    <h3 style={{ fontSize: '1.25rem' }}>Log Sprints</h3>
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>02</div>
+                    <h3 style={{ fontSize: '1.15rem' }}>Log Sprints</h3>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.75rem', background: 'var(--bg-sand)', fontSize: '0.8rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.4rem 0.6rem', background: 'var(--bg-sand)', fontSize: '0.75rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '500' }}>
-                      <span>Topic: Rust CLI</span>
+                      <span>Topic: CLI</span>
                       <span style={{ color: '#3b7c70' }}>+45 mins</span>
                     </div>
-                    <div style={{ height: '4px', background: 'var(--border)', borderRadius: '2px', overflow: 'hidden' }}>
-                      <span style={{ display: 'block', height: '100%', width: '75%', background: '#3b7c70' }}></span>
-                    </div>
                   </div>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Input your study topics and minutes spent. Focus sessions are logged directly to the public Stellar ledger.</p>
+                  <p style={{ fontSize: '0.85rem', lineHeight: '1.35', color: 'var(--ink-muted)' }}>Input topics and focus minutes logged directly to Stellar ledger.</p>
                 </div>
 
                 {/* Step 3 Graphic Card */}
-                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.9rem' }}>03</div>
-                    <h3 style={{ fontSize: '1.25rem' }}>Earn Badges</h3>
+                <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>03</div>
+                    <h3 style={{ fontSize: '1.15rem' }}>Earn Badges</h3>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1.5rem', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.5rem', background: 'var(--bg-sand)' }}>
-                    <span style={{ fontSize: '1.8rem', opacity: '0.3' }}>🥉</span>
-                    <span style={{ fontSize: '2.4rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.08))' }}>🥈</span>
-                    <span style={{ fontSize: '1.8rem', opacity: '0.3' }}>🥇</span>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.2rem 0.5rem', background: 'var(--bg-sand)', fontSize: '1.2rem' }}>
+                    <span>🥉</span>
+                    <span>🥈</span>
+                    <span>🥇</span>
                   </div>
-                  <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Pass total study thresholds (60m, 300m, 1000m) to automatically earn milestone badges awarded via ICC.</p>
+                  <p style={{ fontSize: '0.85rem', lineHeight: '1.35', color: 'var(--ink-muted)' }}>Pass thresholds to earn milestone badges awarded via ICC.</p>
                 </div>
               </div>
             </div>
