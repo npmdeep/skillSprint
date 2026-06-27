@@ -75,7 +75,8 @@ function EventCard({ event }) {
 
 export default function App() {
   const queryClient = useQueryClient();
-  const freighterInstalled = isFreighterInstalled();
+  const isInstalled = isFreighterInstalled();
+  const freighterInstalled = isInstalled || Boolean(wallet.account);
   const [wallet, setWallet] = useState(emptyWallet);
   const [txState, setTxState] = useState(emptyTx);
   const [profileForm, setProfileForm] = useState({
