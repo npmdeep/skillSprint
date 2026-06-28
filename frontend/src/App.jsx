@@ -408,7 +408,7 @@ export default function App() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                 {/* Step 1 Graphic Card */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyBetween: 'space-between', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>01</div>
                     <h3 style={{ fontSize: '1.15rem' }}>Link Wallet</h3>
                   </div>
