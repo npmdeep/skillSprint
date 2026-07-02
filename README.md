@@ -69,6 +69,8 @@ SkillSprint Ledger is designed specifically to utilize the native advantages of 
 | **Live dApp** | [skillsprint-ledger.vercel.app](https://skillsprint-ledger.vercel.app) |
 | **Demo Video** | [Google Drive — Walkthrough Recording](https://drive.google.com/file/d/1fyh44vwBPg8KkTM3u7AbpuhR0Jc8XqEj/view?usp=sharing) |
 | **GitHub Repo** | [npmdeep/skillSprint](https://github.com/npmdeep/skillSprint) |
+| **User Feedback Form** | [SkillSprint Ledger Usability Survey — Google Forms](https://forms.gle/7naP6vyZuww1YkJ49) |
+| **Onboarded Users & Wallet Interactions** | [Responses Tracker — Google Sheets](https://docs.google.com/spreadsheets/d/1gVoC5teEIfFM-J1rAwzloLLK95aqXr6hpv0ZY-Pa5Bw/edit?resourcekey=&gid=831543073#gid=831543073) |
 
 ---
 
@@ -106,7 +108,13 @@ As part of the Level 4 production MVP validation, we onboarded real users to run
 3. User logs study sprints on-chain, advancing progress bars
 4. Accumulated study time automatically triggers badge awards via ICC
 5. Users monitor live blockchain event logs to verify transactions
+6. Users submit feedback via the Google Form
 ```
+
+| Resource | Link |
+|----------|------|
+| **Feedback Form** | [Submit Feedback](https://forms.gle/7naP6vyZuww1YkJ49) |
+| **User Responses & Wallet Proof** | [View Spreadsheet](https://docs.google.com/spreadsheets/d/1gVoC5teEIfFM-J1rAwzloLLK95aqXr6hpv0ZY-Pa5Bw/edit?resourcekey=&gid=831543073#gid=831543073) |
 
 ---
 
