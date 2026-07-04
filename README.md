@@ -1,4 +1,4 @@
-# SkillSprint Ledger
+# ⚡ SkillSprint Ledger
 
 <div align="center">
 
@@ -6,7 +6,7 @@
 
 *Audit and gamify study time milestones secured by Stellar Soroban smart contracts and ICC badges*
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-skillsprint--ledger.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://skillsprint-ledger.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-skill--sprint--stellar.netlify.app-6366f1?style=for-the-badge&logo=netlify)](https://skill-sprint-stellar.netlify.app/)
 [![GitHub](https://img.shields.io/badge/Source_Code-npmdeep%2FskillSprint-181717?style=for-the-badge&logo=github)](https://github.com/npmdeep/skillSprint)
 [![Network](https://img.shields.io/badge/Network-Stellar_Testnet-00B4D8?style=for-the-badge&logo=stellar)](https://stellar.expert/explorer/testnet)
 [![Built for RiseIn](https://img.shields.io/badge/Built_for-RiseIn_Level_4-f59e0b?style=for-the-badge)](https://www.risein.com/)
@@ -15,27 +15,27 @@
 
 ---
 
-## Table of Contents
+## 📋 Table of Contents
 
-1. Problem Statement
-2. Why Stellar?
-3. Live Deployment
-4. Contract Addresses & Transactions
-5. User Onboarding & Feedback
-6. Architecture
-7. Smart Contracts
-8. Production Hardening (Level 4)
-9. Tech Stack
-10. Project Structure
-11. Testing
-12. CI/CD Pipeline
-13. Local Development
-14. Roadmap
-15. Author
+1. [Problem Statement](#-problem-statement)
+2. [Why Stellar?](#-why-stellar)
+3. [Live Deployment](#-live-deployment)
+4. [Contract Addresses & Transactions](#-contract-addresses--transactions)
+5. [User Onboarding & Feedback](#-user-onboarding--feedback)
+6. [Architecture](#-architecture)
+7. [Smart Contracts](#-smart-contracts)
+8. [Production Hardening (Level 4)](#-production-hardening-level-4)
+9. [Tech Stack](#-tech-stack)
+10. [Project Structure](#-project-structure)
+11. [Testing](#-testing)
+12. [CI/CD Pipeline](#-cicd-pipeline)
+13. [Local Development](#-local-development)
+14. [Roadmap](#-roadmap)
+15. [Author](#-author)
 
 ---
 
-## Problem Statement
+## 🔴 Problem Statement
 
 Self-paced study, technical bootcamps, and developer onboarding lack accountable tracking primitives. Learners struggle to prove focus times, verify progress milestones, and share achievements without relying on centralized validation sheets.
 
@@ -49,7 +49,7 @@ Self-paced study, technical bootcamps, and developer onboarding lack accountable
 
 ---
 
-## Why Stellar?
+## 🌟 Why Stellar?
 
 SkillSprint Ledger is designed specifically to utilize the native advantages of the Stellar network:
 
@@ -62,19 +62,19 @@ SkillSprint Ledger is designed specifically to utilize the native advantages of 
 
 ---
 
-## Live Deployment
+## 🌐 Live Deployment
 
 | Resource | Link |
 |----------|------|
-| **Live dApp** | [skillsprint-ledger.vercel.app](https://skillsprint-ledger.vercel.app) |
-| **Demo Video** | [Google Drive — Walkthrough Recording](https://drive.google.com/file/d/1fyh44vwBPg8KkTM3u7AbpuhR0Jc8XqEj/view?usp=sharing) |
-| **GitHub Repo** | [npmdeep/skillSprint](https://github.com/npmdeep/skillSprint) |
-| **User Feedback Form** | [SkillSprint Ledger Usability Survey — Google Forms](https://forms.gle/7naP6vyZuww1YkJ49) |
-| **Onboarded Users & Wallet Interactions** | [Responses Tracker — Google Sheets](https://docs.google.com/spreadsheets/d/1gVoC5teEIfFM-J1rAwzloLLK95aqXr6hpv0ZY-Pa5Bw/edit?resourcekey=&gid=831543073#gid=831543073) |
+| 🌍 **Live dApp** | [skill-sprint-stellar.netlify.app](https://skill-sprint-stellar.netlify.app/) |
+| 🎬 **Demo Video** | [Google Drive — Walkthrough Recording](https://drive.google.com/file/d/1fyh44vwBPg8KkTM3u7AbpuhR0Jc8XqEj/view?usp=sharing) |
+| 💻 **GitHub Repo** | [npmdeep/skillSprint](https://github.com/npmdeep/skillSprint) |
+| 📋 **User Feedback Form** | [SkillSprint Ledger Usability Survey — Google Forms](https://forms.gle/7naP6vyZuww1YkJ49) |
+| 📊 **Onboarded Users & Wallet Interactions** | [Responses Tracker — Google Sheets](https://docs.google.com/spreadsheets/d/1gVoC5teEIfFM-J1rAwzloLLK95aqXr6hpv0ZY-Pa5Bw/edit?resourcekey=&gid=831543073#gid=831543073) |
 
 ---
 
-## Contract Addresses & Transactions
+## 🔗 Contract Addresses & Transactions
 
 All contracts are deployed and cross-initialized on the **Stellar Testnet** using the `npmdeep` developer credentials.
 
@@ -89,14 +89,14 @@ All contracts are deployed and cross-initialized on the **Stellar Testnet** usin
 
 | Action | Transaction Hash |
 |--------|-----------------|
-| **Rewards Contract — Deploy** | [`6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523`](https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523) |
-| **Ledger Contract — Deploy** | [`fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da`](https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da) |
-| **Rewards Contract — Initialize** | [`aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88`](https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88) |
-| **Ledger Contract — Initialize** | [`4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a`](https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a) |
+| **Rewards Contract — Upload & Deploy** | [`6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523`](https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523) |
+| **Ledger Contract — Upload & Deploy** | [`fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da`](https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da) |
+| **Rewards Contract — Initialize (cross-link to Ledger)** | [`aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88`](https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88) |
+| **Ledger Contract — Initialize (cross-link to Rewards)** | [`4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a`](https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a) |
 
 ---
 
-## User Onboarding & Feedback
+## 👥 User Onboarding & Feedback
 
 As part of the Level 4 production MVP validation, we onboarded real users to run the focus learning session logging lifecycle on Stellar Testnet.
 
@@ -113,12 +113,12 @@ As part of the Level 4 production MVP validation, we onboarded real users to run
 
 | Resource | Link |
 |----------|------|
-| **Feedback Form** | [Submit Feedback](https://forms.gle/7naP6vyZuww1YkJ49) |
-| **User Responses & Wallet Proof** | [View Spreadsheet](https://docs.google.com/spreadsheets/d/1gVoC5teEIfFM-J1rAwzloLLK95aqXr6hpv0ZY-Pa5Bw/edit?resourcekey=&gid=831543073#gid=831543073) |
+| 📋 **Feedback Form** | [Submit Feedback](https://forms.gle/7naP6vyZuww1YkJ49) |
+| 📊 **User Responses & Wallet Proof** | [View Spreadsheet](https://docs.google.com/spreadsheets/d/1gVoC5teEIfFM-J1rAwzloLLK95aqXr6hpv0ZY-Pa5Bw/edit?resourcekey=&gid=831543073#gid=831543073) |
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 SkillSprint Ledger consists of Rust contracts managing learner profiles and rewards, paired with a React dashboard displaying real-time events directly from Stellar RPC getEvents stream.
 
@@ -155,7 +155,7 @@ Step 3: User calls claim_badge()   → Ledger contract calls rewards contract
 
 ---
 
-## Smart Contracts
+## 📜 Smart Contracts
 
 ### SkillSprint Ledger Contract (`CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G`)
 
@@ -180,7 +180,7 @@ Handles achievement badges metadata and resolves ICC badge claims.
 
 ---
 
-## Production Hardening (Level 4)
+## 🛡️ Production Hardening (Level 4)
 
 We upgraded SkillSprint Ledger with validations, UI layouts, and telemetry integrations for our production-ready Level 4 release:
 
@@ -195,46 +195,46 @@ We upgraded SkillSprint Ledger with validations, UI layouts, and telemetry integ
 *   **Freighter Connect Fix**: Corrected setAllowed connection triggers to avoid connect button click lag.
 
 ### Monitoring & Analytics
-*   **PostHog**: Capture wallet connections, profile saves, goal adjustments, and study log event triggers.
-*   **Sentry**: Integrated React error boundaries for crash analysis.
+
+| Tool | Purpose | Configuration |
+|------|---------|---------------|
+| **PostHog** | Product analytics — user flows and feature engagement | `main.jsx` — tracks `wallet_connected`, `profile_saved_initiated`, `study_session_logged_initiated` |
+| **Sentry** | Error monitoring and crash reporting | `main.jsx` — React error boundaries for crash analysis |
+| **GitHub Actions** | Automated CI pipeline checks | `.github/workflows/ci.yml` — runs build checks on push |
 
 ---
 
-## Submission Screenshots
+## 📸 Submission Screenshots
 
-### Desktop UI
-
-<p align="center">
-  <img src="sub%20assets/ui.png" width="800" alt="SkillSprint Desktop UI 1" />
-  <br /><br />
-  <img src="sub%20assets/ui2.png" width="800" alt="SkillSprint Desktop UI 2" />
-  <br /><br />
-  <img src="sub%20assets/ui3.png" width="800" alt="SkillSprint Desktop UI 3" />
-</p>
-
-### Mobile Responsive UI
+### 📱 Mobile Responsive UI
 
 <p align="center">
   <img src="sub%20assets/mobui.png" width="375" alt="SkillSprint Mobile UI" />
 </p>
 
-### CI/CD Pipeline
+### 🔄 CI/CD Pipeline
 
 <p align="center">
   <img src="CI_CD.png" width="800" alt="SkillSprint CI/CD Pipeline" />
 </p>
 
+### 📊 Telemetry and Analytics Dashboard
+
+<p align="center">
+  <img src="sub%20assets/ui3.png" width="800" alt="PostHog and Sentry Analytics Integration" />
+</p>
+
 ---
 
-## Testing
+## 🧪 Testing
 
 ### Test Summary
 
 | Suite | Tests | Status |
 |-------|-------|--------|
-| Frontend (Vitest) | 1 test | Passing |
-| Escrow Contract (Rust) | 8 tests | Passing |
-| **Total** | **9 tests** | **9/9 Passing** |
+| Frontend (Vitest) | 1 test | ✅ Passing |
+| Escrow Contract (Rust) | 8 tests | ✅ Passing |
+| **Total** | **9 tests** | ✅ **9/9 Passing** |
 
 ### Running Tests
 
@@ -248,22 +248,23 @@ cargo test
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend Framework** | React + Vite | Fast, responsive dashboard |
-| **Language** | JavaScript | Dynamic states and contract client integration |
-| **Styling** | Vanilla CSS | Warm paper light-editorial components |
-| **Smart Contracts** | Soroban (Rust) | On-chain ledger registries and streaks |
-| **Wallet Integration** | Freighter API | Wallet signatures and network handshakes |
-| **Error Monitoring** | Sentry | Production crash reporting |
-| **Analytics** | PostHog | Event tracking |
-| **Hosting** | Vercel | Production hosting |
+| Layer | Technology | Version | Purpose |
+|-------|-----------|---------|---------|
+| **Frontend Framework** | React + Vite | 5.4 | Fast, responsive dashboard |
+| **Language** | JavaScript | ESModules | Dynamic states and contract client integration |
+| **Styling** | Vanilla CSS | CSS3 | Warm paper light-editorial components |
+| **Smart Contracts** | Soroban (Rust) | stable | On-chain ledger registries and streaks |
+| **Blockchain SDK** | @stellar/stellar-sdk | 12.x | Transaction building, XDR encoding, RPC calls |
+| **Wallet Integration** | Freighter API | 1.x | Wallet signatures and network handshakes |
+| **Error Monitoring** | Sentry | 10.x | Production crash reporting |
+| **Analytics** | PostHog | 1.x | Event tracking |
+| **Hosting** | Netlify | — | Production hosting |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 skillsprint-ledger/
@@ -290,7 +291,7 @@ skillsprint-ledger/
 
 ---
 
-## Local Development
+## 🚀 Local Development
 
 ### Prerequisites
 - Node.js 18+
@@ -313,26 +314,27 @@ npm run dev
 
 ---
 
-## Roadmap
+## 🗺️ Roadmap
 
-### Level 3 (Complete)
+### ✅ Level 3 (Complete)
 - Main Ledger contract managing weekly minutes metrics and study session logs.
 - Event polling using getEvents update triggers.
 - Unit tests written for contracts.
 
-### Level 4 (Complete)
+### ✅ Level 4 (Complete)
 - Dual contract setup verified with ICC call mechanics.
 - Premium light-editorial warm paper design tokens.
 - Telemetry integrations: PostHog event logging + Sentry exception tracking.
+- Google Forms user feedback survey and spreadsheet links integrated.
 
-### Level 5 (Planned)
+### 🔜 Level 5 (Planned)
 - Direct ERC-20 equivalent token claims on Stellar.
 - Expanded leaderboard statistics.
 
 ---
 
-## Author
+## 👨💻 Author
 
 **Priyanka Balmiki** — [@balluPiku](https://github.com/balluPiku)
 
-*Built for the RiseIn Stellar dApp Development Program — Level 4*
+*Built for the [RiseIn Stellar dApp Development Program](https://www.risein.com/) — Level 4 Black Belt*
