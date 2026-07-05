@@ -335,6 +335,6 @@ npm run dev
 
 ## 👨💻 Author
 
-**Priyanka Balmiki** — [@balluPiku](https://github.com/balluPiku)
+**npmdeep** — [@npmdeep](https://github.com/npmdeep)
 
 *Built for the [RiseIn Stellar dApp Development Program](https://www.risein.com/) — Level 4 Black Belt*
