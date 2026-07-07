@@ -215,7 +215,7 @@ We upgraded SkillSprint Ledger with validations, UI layouts, and telemetry integ
 ### 🔄 CI/CD Pipeline
 
 <p align="center">
-  <img src="CI_CD.png" width="800" alt="SkillSprint CI/CD Pipeline" />
+  <img src="sub%20assets/CI_CD.png" width="800" alt="SkillSprint CI/CD Pipeline" />
 </p>
 
 ### 📊 Telemetry and Analytics Dashboard
