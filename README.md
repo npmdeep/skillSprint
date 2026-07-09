@@ -206,6 +206,16 @@ We upgraded SkillSprint Ledger with validations, UI layouts, and telemetry integ
 
 ## 📸 Submission Screenshots
 
+### 💻 Desktop UI
+
+<p align="center">
+  <img src="sub%20assets/ui.png" width="800" alt="SkillSprint Dashboard View 1" />
+  <br /><br />
+  <img src="sub%20assets/ui2.png" width="800" alt="SkillSprint Profile Config" />
+  <br /><br />
+  <img src="sub%20assets/ui3.png" width="800" alt="SkillSprint Achievements" />
+</p>
+
 ### 📱 Mobile Responsive UI
 
 <p align="center">
@@ -221,7 +231,7 @@ We upgraded SkillSprint Ledger with validations, UI layouts, and telemetry integ
 ### 📊 Telemetry and Analytics Dashboard
 
 <p align="center">
-  <img src="sub%20assets/ui3.png" width="800" alt="PostHog and Sentry Analytics Integration" />
+  <img src="sub%20assets/analytics%20ss.png" width="800" alt="PostHog and Sentry Analytics Integration" />
 </p>
 
 ---
