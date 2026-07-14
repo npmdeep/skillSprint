@@ -175,7 +175,7 @@ Handles achievement badges metadata and resolves ICC badge claims.
 ### 🔄 CI/CD Pipeline
 
 <p align="center">
-  <img src="sub%20assets/CI_CD.png" width="800" alt="SkillSprint CI/CD Pipeline" />
+  <img src="sub%20assets/cicd.png" width="800" alt="SkillSprint CI/CD Pipeline" />
 </p>
 
 ---
