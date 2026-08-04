@@ -176,6 +176,18 @@
                       "key": {
                         "vec": [
                           {
+                            "symbol": "LearnerCount"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "u32": 1
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
                             "symbol": "RewardsContract"
                           }
                         ]
