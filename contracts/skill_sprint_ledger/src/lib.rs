@@ -1,6 +1,6 @@
 #![no_std]
 
-use soroban_sdk::{contract, contractevent, contractimpl, contracttype, Address, Env, String, IntoVal};
+use soroban_sdk::{contract, contractevent, contractimpl, contracttype, Address, Env, String, Vec, IntoVal};
 
 const DAY_IN_SECONDS: u64 = 86_400;
 const WEEK_IN_SECONDS: u64 = 604_800;
@@ -46,6 +46,17 @@ pub struct Dashboard {
     pub goal_reached_this_week: bool,
 }
 
+/// Entry returned by get_leaderboard_snapshot for ranking learners.
+#[derive(Clone)]
+#[contracttype]
+pub struct LeaderboardEntry {
+    pub learner: Address,
+    pub display_name: String,
+    pub total_minutes: u32,
+    pub current_streak: u32,
+    pub session_count: u32,
+}
+
 #[contractevent]
 #[derive(Clone)]
 pub struct ProfileSaved {
@@ -81,6 +92,7 @@ enum DataKey {
     Session(Address, u32),
     Admin,
     RewardsContract,
+    LearnerCount,
 }
 
 #[contract]
@@ -94,6 +106,7 @@ impl SkillSprintLedger {
         }
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::RewardsContract, &rewards_contract);
+        env.storage().instance().set(&DataKey::LearnerCount, &0u32);
     }
 
     pub fn get_rewards_contract(env: Env) -> Address {
@@ -103,6 +116,14 @@ impl SkillSprintLedger {
             .unwrap_or_else(|| panic!("Rewards contract not configured"))
     }
 
+    /// Returns the total number of unique learner profiles registered.
+    pub fn get_total_learners(env: Env) -> u32 {
+        env.storage()
+            .instance()
+            .get(&DataKey::LearnerCount)
+            .unwrap_or(0u32)
+    }
+
     pub fn save_profile(env: Env, learner: Address, display_name: String, weekly_goal_minutes: u32) {
         learner.require_auth();
         validate_display_name(&display_name);
@@ -110,6 +131,11 @@ impl SkillSprintLedger {
 
         let now = env.ledger().timestamp();
         let current_week = current_week(&env);
+
+        let is_new = !env
+            .storage()
+            .persistent()
+            .has(&DataKey::Profile(learner.clone()));
 
         let mut profile = read_profile_optional(&env, &learner).unwrap_or(LearnerProfile {
             display_name: display_name.clone(),
@@ -128,6 +154,19 @@ impl SkillSprintLedger {
         profile.weekly_goal_minutes = weekly_goal_minutes;
 
         write_profile(&env, &learner, &profile);
+
+        // Increment global learner count only for brand-new profiles
+        if is_new {
+            let count: u32 = env
+                .storage()
+                .instance()
+                .get(&DataKey::LearnerCount)
+                .unwrap_or(0u32);
+            env.storage()
+                .instance()
+                .set(&DataKey::LearnerCount, &count.saturating_add(1));
+        }
+
         ProfileSaved {
             learner,
             display_name,
@@ -164,15 +203,17 @@ impl SkillSprintLedger {
         if profile.session_count == 0 {
             profile.current_streak = 1;
         } else if current_day == profile.last_study_day {
+            // Same day — streak unchanged
         } else if current_day == profile.last_study_day + 1 {
-            profile.current_streak += 1;
+            profile.current_streak = profile.current_streak.saturating_add(1);
         } else {
             profile.current_streak = 1;
         }
 
         profile.last_study_day = current_day;
-        profile.total_minutes += minutes_spent;
-        profile.minutes_this_week += minutes_spent;
+        // Use saturating_add to guard against theoretical u32 overflow
+        profile.total_minutes = profile.total_minutes.saturating_add(minutes_spent);
+        profile.minutes_this_week = profile.minutes_this_week.saturating_add(minutes_spent);
 
         let session = StudySession {
             topic: topic.clone(),
@@ -182,10 +223,9 @@ impl SkillSprintLedger {
         };
 
         write_session(&env, &learner, profile.session_count, &session);
-        profile.session_count += 1;
+        profile.session_count = profile.session_count.saturating_add(1);
         write_profile(&env, &learner, &profile);
 
-        // Publish session log event
         StudySessionLogged {
             learner: learner.clone(),
             topic,
@@ -256,6 +296,65 @@ impl SkillSprintLedger {
             .get(&DataKey::Session(learner, index))
             .unwrap_or_else(|| panic!("Session not found"))
     }
+
+    /// Returns a leaderboard snapshot for the provided list of learner addresses.
+    /// Entries are returned sorted by total_minutes descending.
+    /// Addresses with no profile are silently skipped.
+    pub fn get_leaderboard_snapshot(env: Env, learners: Vec<Address>) -> Vec<LeaderboardEntry> {
+        let mut entries: Vec<LeaderboardEntry> = Vec::new(&env);
+
+        for learner in learners.iter() {
+            if let Some(profile) = read_profile_optional(&env, &learner) {
+                entries.push_back(LeaderboardEntry {
+                    learner,
+                    display_name: profile.display_name,
+                    total_minutes: profile.total_minutes,
+                    current_streak: profile.current_streak,
+                    session_count: profile.session_count,
+                });
+            }
+        }
+
+        // Insertion-sort by total_minutes descending (contract environment has no std sort)
+        let len = entries.len();
+        if len <= 1 {
+            return entries;
+        }
+
+        // Build a sorted vec manually
+        let mut sorted: Vec<LeaderboardEntry> = Vec::new(&env);
+        for entry in entries.iter() {
+            let mut inserted = false;
+            let sorted_len = sorted.len();
+            // Find insertion point
+            let mut insert_at: u32 = sorted_len;
+            for i in 0..sorted_len {
+                if entry.total_minutes > sorted.get(i).unwrap().total_minutes {
+                    insert_at = i;
+                    break;
+                }
+            }
+            if !inserted {
+                if insert_at == sorted_len {
+                    sorted.push_back(entry.clone());
+                } else {
+                    // Rebuild with insertion
+                    let mut rebuilt: Vec<LeaderboardEntry> = Vec::new(&env);
+                    for i in 0..sorted_len {
+                        if i == insert_at {
+                            rebuilt.push_back(entry.clone());
+                        }
+                        rebuilt.push_back(sorted.get(i).unwrap());
+                    }
+                    sorted = rebuilt;
+                }
+                inserted = true;
+            }
+            let _ = inserted; // suppress unused variable warning
+        }
+
+        sorted
+    }
 }
 
 fn read_profile_optional(env: &Env, learner: &Address) -> Option<LearnerProfile> {
@@ -303,6 +402,12 @@ fn validate_display_name(display_name: &String) {
 fn validate_topic(topic: &String) {
     let length = topic.len();
     assert!(length >= 3 && length <= 48, "Topic must be 3-48 chars");
+    // Guard against whitespace-only topics that pass the length check.
+    // soroban_sdk::String::to_bytes() returns a soroban Bytes object whose
+    // iter() yields u32 values. ASCII space is 0x20 = 32u32.
+    let bytes = topic.to_bytes();
+    let all_spaces = bytes.iter().all(|b| b == b' ');
+    assert!(!all_spaces, "Topic must not be blank");
 }
 
 fn validate_session_minutes(minutes_spent: u32) {
@@ -329,20 +434,20 @@ mod test {
 
     #[contractimpl]
     impl MockRewardsContract {
-        pub fn initialize(env: Env, admin: Address) {}
-        pub fn award_badge(env: Env, learner: Address, badge_type: u32) {}
+        pub fn initialize(_env: Env, _admin: Address) {}
+        pub fn award_badge(_env: Env, _learner: Address, _badge_type: u32) {}
     }
 
     fn setup() -> (Env, SkillSprintLedgerClient<'static>, Address, Address) {
         let env = Env::default();
         let contract_id = env.register(SkillSprintLedger, ());
         let client = SkillSprintLedgerClient::new(&env, &contract_id);
-        
+
         let rewards_id = env.register(MockRewardsContract, ());
         let admin = Address::generate(&env);
-        
+
         client.initialize(&admin, &rewards_id);
-        
+
         env.mock_all_auths();
         (env, client, admin, rewards_id)
     }
@@ -427,5 +532,76 @@ mod test {
         let (env, client, learner, _) = setup();
         client.save_profile(&learner, &text(&env, "Goal Guard"), &200);
         client.update_weekly_goal(&learner, &20);
+    }
+
+    // --- New tests for F1: LearnerCount ---
+
+    #[test]
+    fn tracks_total_learner_count() {
+        let (env, client, learner_a, _) = setup();
+        let learner_b = Address::generate(&env);
+
+        assert_eq!(client.get_total_learners(), 0);
+
+        client.save_profile(&learner_a, &text(&env, "Alice Builder"), &120);
+        assert_eq!(client.get_total_learners(), 1);
+
+        client.save_profile(&learner_b, &text(&env, "Bob Builder"), &180);
+        assert_eq!(client.get_total_learners(), 2);
+
+        // Re-saving the same learner should not increment the count
+        client.save_profile(&learner_a, &text(&env, "Alice Updated"), &240);
+        assert_eq!(client.get_total_learners(), 2);
+    }
+
+    // --- New test: whitespace topic rejection ---
+
+    #[test]
+    #[should_panic(expected = "Topic must not be blank")]
+    fn rejects_whitespace_only_topic() {
+        let (env, client, learner, _) = setup();
+        client.save_profile(&learner, &text(&env, "Blank Tester"), &200);
+        // "   " is 3 chars — passes length check but must fail blank check
+        client.log_session(&learner, &text(&env, "   "), &30);
+    }
+
+    // --- New test: leaderboard snapshot ---
+
+    #[test]
+    fn leaderboard_snapshot_sorted_by_total_minutes() {
+        let (env, client, learner_a, _) = setup();
+        let learner_b = Address::generate(&env);
+        let learner_c = Address::generate(&env);
+
+        client.save_profile(&learner_a, &text(&env, "Alice"), &120);
+        client.save_profile(&learner_b, &text(&env, "Bob"), &120);
+        client.save_profile(&learner_c, &text(&env, "Carol"), &120);
+
+        client.log_session(&learner_a, &text(&env, "Rust basics"), &60);
+        client.log_session(&learner_b, &text(&env, "Soroban"), &200);
+        client.log_session(&learner_c, &text(&env, "Frontend"), &90);
+
+        let learners = soroban_sdk::vec![&env, learner_a.clone(), learner_b.clone(), learner_c.clone()];
+        let board = client.get_leaderboard_snapshot(&learners);
+
+        assert_eq!(board.len(), 3);
+        // Bob has most minutes (200) → should be first
+        assert_eq!(board.get(0).unwrap().display_name, text(&env, "Bob"));
+        assert_eq!(board.get(0).unwrap().total_minutes, 200);
+    }
+
+    // --- New test: streak streak does not double-count same-day sessions ---
+
+    #[test]
+    fn same_day_session_does_not_advance_streak() {
+        let (env, client, learner, _) = setup();
+
+        client.save_profile(&learner, &text(&env, "Day Sampler"), &100);
+        client.log_session(&learner, &text(&env, "Morning session"), &30);
+        client.log_session(&learner, &text(&env, "Evening session"), &30);
+
+        let dashboard = client.get_dashboard(&learner);
+        assert_eq!(dashboard.current_streak, 1);
+        assert_eq!(dashboard.total_minutes, 60);
     }
 }
