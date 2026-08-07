@@ -35,8 +35,14 @@ jobs:
       - name: Run Soroban contract tests
         run: cargo test --locked
 
-      - name: Build contract WASM artifact
+      - name: Run rewards contract tests
+        run: cargo test --locked -p skill_sprint_rewards
+
+      - name: Build ledger contract WASM artifact
         run: cargo build --locked --target wasm32v1-none --release -p skill_sprint_ledger
+
+      - name: Build rewards contract WASM artifact
+        run: cargo build --locked --target wasm32v1-none --release -p skill_sprint_rewards
 
   frontend:
     name: Frontend Build
