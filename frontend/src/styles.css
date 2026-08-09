@@ -476,3 +476,44 @@ input:focus {
     padding: 0 1rem 2rem;
   }
 }
+
+/* ── New: --accent alias for analytics component ── */
+:root {
+  --accent: var(--primary-accent);
+}
+
+/* ── New: Shimmer skeleton loading animation ── */
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-row {
+  height: 56px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-sand) 25%,
+    #e8e8e4 50%,
+    var(--bg-sand) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ── New: Leaderboard row ── */
+.leaderboard-row {
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.leaderboard-row:hover {
+  background: var(--bg-sand) !important;
+}
+
