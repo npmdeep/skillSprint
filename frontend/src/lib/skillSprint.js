@@ -238,14 +238,22 @@ export async function readRecentSessions(account, limit = 5) {
   }
 
   const indexes = Array.from({ length: Math.min(count, limit) }, (_, idx) => count - idx - 1);
-  const sessionResults = await Promise.all(
-    indexes.map(async (index) => {
-      const sessionTx = await client.get_session({ learner: account, index });
-      return normalizeSession(index, sessionTx.result);
-    })
-  );
 
-  return sessionResults;
+  // Batch fetches in groups of 3 to avoid overwhelming the RPC endpoint
+  const BATCH_SIZE = 3;
+  const results = [];
+  for (let i = 0; i < indexes.length; i += BATCH_SIZE) {
+    const batch = indexes.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(async (index) => {
+        const sessionTx = await client.get_session({ learner: account, index });
+        return normalizeSession(index, sessionTx.result);
+      })
+    );
+    results.push(...batchResults);
+  }
+
+  return results;
 }
 
 export async function readBadges(account) {
@@ -255,6 +263,79 @@ export async function readBadges(account) {
   const client = await buildRewardsClient();
   const badgesTx = await client.get_badges({ learner: account });
   return Array.from(badgesTx.result || []).map(Number);
+}
+
+export async function readHighestBadge(account) {
+  if (!configuredRewardsContractId) {
+    return 0;
+  }
+  const client = await buildRewardsClient();
+  const tx = await client.get_highest_badge({ learner: account });
+  return Number(tx.result || 0);
+}
+
+export async function readTotalLearners() {
+  const client = await buildClient();
+  const tx = await client.get_total_learners();
+  return Number(tx.result || 0);
+}
+
+/**
+ * Read leaderboard data for a list of known learner addresses.
+ * Fetches dashboard + highest badge in parallel per learner.
+ * Addresses without a profile are silently skipped.
+ */
+export async function readLeaderboard(addresses = []) {
+  if (!addresses.length || !hasContractConfig()) {
+    return [];
+  }
+
+  const client = await buildClient();
+  const rewardsAvailable = Boolean(configuredRewardsContractId);
+  const rewardsClient = rewardsAvailable ? await buildRewardsClient() : null;
+
+  const BATCH_SIZE = 4;
+  const entries = [];
+
+  for (let i = 0; i < addresses.length; i += BATCH_SIZE) {
+    const batch = addresses.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.allSettled(
+      batch.map(async (learner) => {
+        const hasProfileTx = await client.has_profile({ learner });
+        if (!hasProfileTx.result) return null;
+
+        const dashTx = await client.get_dashboard({ learner });
+        const dash = normalizeDashboard(dashTx.result);
+
+        let highestBadge = 0;
+        if (rewardsClient) {
+          try {
+            const badgeTx = await rewardsClient.get_highest_badge({ learner });
+            highestBadge = Number(badgeTx.result || 0);
+          } catch {
+            // Rewards contract read failure should not break the leaderboard
+          }
+        }
+
+        return {
+          learner,
+          displayName: dash.displayName,
+          totalMinutes: dash.totalMinutes,
+          currentStreak: dash.currentStreak,
+          sessionCount: dash.sessionCount,
+          highestBadge,
+        };
+      })
+    );
+
+    for (const result of batchResults) {
+      if (result.status === "fulfilled" && result.value !== null) {
+        entries.push(result.value);
+      }
+    }
+  }
+
+  return entries.sort((a, b) => b.totalMinutes - a.totalMinutes);
 }
 
 async function submitTransaction(assembledTx) {
