@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { WatchWalletChanges } from "@stellar/freighter-api";
 import {
   configuredContractId,
   configuredRewardsContractId,
@@ -19,10 +18,14 @@ import {
   readDashboard,
   readRecentSessions,
   readBadges,
+  readTotalLearners,
+  readLeaderboard,
   saveProfile,
   shortAddress,
   updateWeeklyGoal
 } from "./lib/skillSprint";
+import { AnalyticsSummary } from "./components/AnalyticsSummary";
+import { LeaderboardPanel } from "./components/LeaderboardPanel";
 
 const emptyWallet = {
   account: "",
@@ -73,21 +76,52 @@ function EventCard({ event }) {
   );
 }
 
+// Inline form validation error — replaces alert() with a styled message
+function FormError({ message }) {
+  if (!message) return null;
+  return (
+    <p
+      role="alert"
+      style={{
+        color: "#bf4f36",
+        fontSize: "0.82rem",
+        margin: "0.25rem 0 0",
+        padding: "0.35rem 0.5rem",
+        background: "rgba(191,79,54,0.08)",
+        borderRadius: "5px",
+        border: "1px solid rgba(191,79,54,0.25)"
+      }}
+    >
+      {message}
+    </p>
+  );
+}
+
+// Skeleton placeholder for loading states
+function SkeletonCard() {
+  return (
+    <div
+      style={{
+        height: "80px",
+        borderRadius: "10px",
+        background: "linear-gradient(90deg, var(--bg-sand) 25%, #e8e8e4 50%, var(--bg-sand) 75%)",
+        backgroundSize: "200% 100%",
+        animation: "shimmer 1.4s infinite"
+      }}
+    />
+  );
+}
+
 export default function App() {
   const queryClient = useQueryClient();
   const [wallet, setWallet] = useState(emptyWallet);
-  const isInstalled = isFreighterInstalled();
-  const freighterInstalled = isInstalled || Boolean(wallet.account);
   const [txState, setTxState] = useState(emptyTx);
-  const [profileForm, setProfileForm] = useState({
-    displayName: "",
-    weeklyGoalMinutes: "240"
-  });
+  const [profileForm, setProfileForm] = useState({ displayName: "", weeklyGoalMinutes: "240" });
+  const [profileError, setProfileError] = useState("");
   const [goalForm, setGoalForm] = useState("300");
-  const [sessionForm, setSessionForm] = useState({
-    topic: "",
-    minutesSpent: "45"
-  });
+  const [goalError, setGoalError] = useState("");
+  const [sessionForm, setSessionForm] = useState({ topic: "", minutesSpent: "45" });
+  const [sessionError, setSessionError] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -97,20 +131,10 @@ export default function App() {
       try {
         const nextState = await discoverWalletState();
         if (!isMounted) return;
-
-        setWallet((current) => ({
-          ...current,
-          ...nextState,
-          isConnecting: false,
-          error: ""
-        }));
+        setWallet((current) => ({ ...current, ...nextState, isConnecting: false, error: "" }));
       } catch (error) {
         if (!isMounted) return;
-        setWallet((current) => ({
-          ...current,
-          isConnecting: false,
-          error: parseError(error)
-        }));
+        setWallet((current) => ({ ...current, isConnecting: false, error: parseError(error) }));
       }
     }
 
@@ -120,9 +144,7 @@ export default function App() {
         const { WatchWalletChanges } = await import("@stellar/freighter-api");
         if (!isMounted) return;
         watcher = new WatchWalletChanges(3000);
-        watcher.watch(() => {
-          syncWallet();
-        });
+        watcher.watch(() => { syncWallet(); });
       } catch {
         watcher = null;
       }
@@ -159,12 +181,40 @@ export default function App() {
     enabled: readyForReads && Boolean(dashboardQuery.data)
   });
 
+  const totalLearnersQuery = useQuery({
+    queryKey: ["total-learners", configuredContractId],
+    queryFn: () => readTotalLearners(),
+    enabled: hasContractConfig(),
+    staleTime: 60_000,
+    refetchInterval: 120_000
+  });
+
   const liveEventsQuery = useQuery({
     queryKey: ["live-events", configuredContractId],
     queryFn: () => readContractEvents(10),
     enabled: hasContractConfig(),
     staleTime: 10_000,
     refetchInterval: 15_000
+  });
+
+  // Extract unique learner addresses from live events for the leaderboard
+  const knownLearnerAddresses = useMemo(() => {
+    const events = liveEventsQuery.data || [];
+    const seen = new Set();
+    for (const e of events) {
+      if (e.learner) seen.add(e.learner);
+    }
+    // Always include current user if connected
+    if (wallet.account) seen.add(wallet.account);
+    return Array.from(seen);
+  }, [liveEventsQuery.data, wallet.account]);
+
+  const leaderboardQuery = useQuery({
+    queryKey: ["leaderboard", configuredContractId, knownLearnerAddresses.join(",")],
+    queryFn: () => readLeaderboard(knownLearnerAddresses),
+    enabled: hasContractConfig() && knownLearnerAddresses.length > 0,
+    staleTime: 30_000,
+    refetchInterval: 60_000
   });
 
   useEffect(() => {
@@ -183,18 +233,10 @@ export default function App() {
   }, [dashboard]);
 
   async function runLedgerAction(action, pendingMessage, successMessage) {
-    if (!wallet.account) {
-      throw new Error("Connect Freighter before sending a transaction.");
-    }
-    if (wrongNetwork) {
-      throw new Error(`Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`);
-    }
+    if (!wallet.account) throw new Error("Connect Freighter before sending a transaction.");
+    if (wrongNetwork) throw new Error(`Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`);
 
-    setTxState({
-      status: "pending",
-      message: pendingMessage,
-      hash: ""
-    });
+    setTxState({ status: "pending", message: pendingMessage, hash: "" });
 
     try {
       const result = await action();
@@ -203,21 +245,14 @@ export default function App() {
         queryClient.invalidateQueries({ queryKey: ["dashboard", wallet.account] }),
         queryClient.invalidateQueries({ queryKey: ["sessions", wallet.account] }),
         queryClient.invalidateQueries({ queryKey: ["badges", wallet.account] }),
-        queryClient.invalidateQueries({ queryKey: ["live-events", configuredContractId] })
+        queryClient.invalidateQueries({ queryKey: ["live-events", configuredContractId] }),
+        queryClient.invalidateQueries({ queryKey: ["total-learners", configuredContractId] }),
+        queryClient.invalidateQueries({ queryKey: ["leaderboard", configuredContractId] })
       ]);
 
-      setTxState({
-        status: "success",
-        message: successMessage,
-        hash: result.hash
-      });
+      setTxState({ status: "success", message: successMessage, hash: result.hash });
     } catch (error) {
-      const message = parseError(error);
-      setTxState({
-        status: "error",
-        message,
-        hash: ""
-      });
+      setTxState({ status: "error", message: parseError(error), hash: "" });
       throw error;
     }
   }
@@ -253,29 +288,26 @@ export default function App() {
     saveProfileMutation.isPending || updateGoalMutation.isPending || logSessionMutation.isPending;
 
   async function handleConnectWallet() {
-    setWallet((current) => ({
-      ...current,
-      isConnecting: true,
-      error: ""
-    }));
+    // Guard: check Freighter is installed before attempting connection
+    if (!isFreighterInstalled()) {
+      setWallet((current) => ({
+        ...current,
+        error: "Freighter wallet is not installed. Visit freighter.app to install it."
+      }));
+      return;
+    }
+
+    setWallet((current) => ({ ...current, isConnecting: true, error: "" }));
 
     try {
       const nextState = await connectWallet();
-      setWallet({
-        ...emptyWallet,
-        ...nextState,
-        isConnecting: false
-      });
+      setWallet({ ...emptyWallet, ...nextState, isConnecting: false });
       import("posthog-js").then(({ default: posthog }) => {
         posthog.identify(nextState.address || nextState.account);
         posthog.capture("wallet_connected", { account: nextState.address || nextState.account });
       }).catch(() => {});
     } catch (error) {
-      setWallet((current) => ({
-        ...current,
-        isConnecting: false,
-        error: parseError(error)
-      }));
+      setWallet((current) => ({ ...current, isConnecting: false, error: parseError(error) }));
     }
   }
 
@@ -285,19 +317,22 @@ export default function App() {
     const weeklyGoalMinutes = Number(profileForm.weeklyGoalMinutes);
 
     if (!displayName) {
-      alert("Add a display name before saving your profile.");
+      setProfileError("Add a display name before saving your profile.");
       return;
     }
-
+    if (displayName.length < 3 || displayName.length > 32) {
+      setProfileError("Display name must be between 3 and 32 characters.");
+      return;
+    }
     if (Number.isNaN(weeklyGoalMinutes) || weeklyGoalMinutes < 30 || weeklyGoalMinutes > 5000) {
-      alert("Weekly goal must stay between 30 and 5000 minutes.");
+      setProfileError("Weekly goal must stay between 30 and 5000 minutes.");
       return;
     }
 
+    setProfileError("");
     import("posthog-js").then(({ default: posthog }) => {
       posthog.capture("profile_saved_initiated", { displayName, weeklyGoalMinutes });
     }).catch(() => {});
-
     saveProfileMutation.mutate({ displayName, weeklyGoalMinutes });
   }
 
@@ -306,14 +341,14 @@ export default function App() {
     const weeklyGoalMinutes = Number(goalForm);
 
     if (Number.isNaN(weeklyGoalMinutes) || weeklyGoalMinutes < 30 || weeklyGoalMinutes > 5000) {
-      alert("Weekly goal must stay between 30 and 5000 minutes.");
+      setGoalError("Weekly goal must stay between 30 and 5000 minutes.");
       return;
     }
 
+    setGoalError("");
     import("posthog-js").then(({ default: posthog }) => {
       posthog.capture("goal_updated_initiated", { weeklyGoalMinutes });
     }).catch(() => {});
-
     updateGoalMutation.mutate({ weeklyGoalMinutes });
   }
 
@@ -323,19 +358,26 @@ export default function App() {
     const minutesSpent = Number(sessionForm.minutesSpent);
 
     if (!topic) {
-      alert("Give this study sprint a topic so it is meaningful on-chain.");
+      setSessionError("Give this study sprint a topic so it is meaningful on-chain.");
       return;
     }
-
+    if (topic.length < 3) {
+      setSessionError("Topic must be at least 3 characters.");
+      return;
+    }
+    if (/^\s+$/.test(topic)) {
+      setSessionError("Topic cannot be whitespace only.");
+      return;
+    }
     if (Number.isNaN(minutesSpent) || minutesSpent < 5 || minutesSpent > 480) {
-      alert("Study sessions must be between 5 and 480 minutes.");
+      setSessionError("Study sessions must be between 5 and 480 minutes.");
       return;
     }
 
+    setSessionError("");
     import("posthog-js").then(({ default: posthog }) => {
       posthog.capture("study_session_logged_initiated", { topic, minutesSpent });
     }).catch(() => {});
-
     logSessionMutation.mutate({ topic, minutesSpent });
   }
 
@@ -346,7 +388,7 @@ export default function App() {
 
   const statusMessage =
     wallet.error ||
-    (!freighterInstalled
+    (!isFreighterInstalled() && !wallet.account
       ? "Freighter is not installed yet. Install the extension to sign Soroban transactions from the browser."
       : wrongNetwork
         ? `Connected to ${getNetworkLabel(wallet.networkPassphrase)}. Switch Freighter to ${getNetworkLabel(configuredNetworkPassphrase)}.`
@@ -364,13 +406,24 @@ export default function App() {
           </a>
           <div className="topbar-actions">
             <span className="network-tag">{getNetworkLabel(configuredNetworkPassphrase)}</span>
+            {totalLearnersQuery.data != null && (
+              <span className="network-tag" style={{ background: "var(--bg-sand)", color: "var(--ink-muted)" }}>
+                {totalLearnersQuery.data} learner{totalLearnersQuery.data !== 1 ? "s" : ""}
+              </span>
+            )}
             {wallet.account ? (
               <span className="network-tag" style={{ border: '1px solid var(--border)' }}>
                 {shortAddress(wallet.account)}
               </span>
             ) : (
-              <button className="button button-secondary" style={{ padding: '0.5rem 1rem' }} onClick={handleConnectWallet}>
-                Connect Wallet
+              <button
+                id="connect-wallet-btn"
+                className="button button-secondary"
+                style={{ padding: '0.5rem 1rem' }}
+                onClick={handleConnectWallet}
+                disabled={wallet.isConnecting}
+              >
+                {wallet.isConnecting ? "Connecting..." : "Connect Wallet"}
               </button>
             )}
           </div>
@@ -381,7 +434,7 @@ export default function App() {
         {/* ---------------- DISCONNECTED STATE / LANDING PAGE ---------------- */}
         {!wallet.account && (
           <div className="landing-layout" style={{ display: 'flex', flexDirection: 'column', gap: '4rem', marginTop: '2.5rem' }}>
-            {/* Hero Copy (Top Section) */}
+            {/* Hero Copy */}
             <div className="landing-copy" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
               <h1 style={{ fontSize: 'clamp(3rem, 6vw, 4.2rem)', lineHeight: '1.1', marginBottom: '1.5rem' }}>
                 Proof of Study Secured on <span>Stellar</span>.
@@ -389,9 +442,12 @@ export default function App() {
               <p className="lead" style={{ fontSize: '1.2rem', marginBottom: '2.5rem', color: 'var(--ink-muted)' }}>
                 Turn your learning time into verifiable achievements. Define weekly focus targets, log your learning sessions on-chain, and earn milestone badges verified by Soroban smart contracts.
               </p>
+              {wallet.error && (
+                <p style={{ color: "#bf4f36", fontSize: "0.9rem", marginBottom: "1rem" }}>{wallet.error}</p>
+              )}
               <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <button className="button button-primary" onClick={handleConnectWallet}>
-                  Connect Wallet
+                <button id="hero-connect-btn" className="button button-primary" onClick={handleConnectWallet} disabled={wallet.isConnecting}>
+                  {wallet.isConnecting ? "Connecting..." : "Connect Wallet"}
                 </button>
                 {contractExplorerLink && (
                   <a className="button button-secondary" href={contractExplorerLink} target="_blank" rel="noreferrer">
@@ -401,12 +457,11 @@ export default function App() {
               </div>
             </div>
 
-            {/* How it works (Bottom Section - Horizontal cards with small height) */}
+            {/* How it works */}
             <div className="panel" style={{ background: 'var(--bg-sand)', padding: '2rem 2.5rem' }}>
               <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', textAlign: 'center' }}>How it works</h2>
-              
+
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                {/* Step 1 Graphic Card */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>01</div>
@@ -419,7 +474,6 @@ export default function App() {
                   <p style={{ fontSize: '0.85rem', lineHeight: '1.35', color: 'var(--ink-muted)' }}>Connect Freighter extension to securely verify study identity.</p>
                 </div>
 
-                {/* Step 2 Graphic Card */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>02</div>
@@ -434,7 +488,6 @@ export default function App() {
                   <p style={{ fontSize: '0.85rem', lineHeight: '1.35', color: 'var(--ink-muted)' }}>Input topics and focus minutes logged directly to Stellar ledger.</p>
                 </div>
 
-                {/* Step 3 Graphic Card */}
                 <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid var(--border)', padding: '1.2rem', display: 'flex', flexDirection: 'column', gap: '0.8rem', minHeight: '170px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'var(--ink)', color: '#ffffff', display: 'grid', placeItems: 'center', fontFamily: 'JetBrains Mono', fontSize: '0.8rem' }}>03</div>
@@ -466,60 +519,76 @@ export default function App() {
               </div>
             )}
 
-            <div className="metrics-row">
-              <MetricCard
-                label="Hours Invested"
-                value={dashboard ? formatMinutes(dashboard.totalMinutes) : "0m"}
-                note={dashboard ? `${dashboard.sessionCount} logged sessions` : "Starts after your first session"}
-              />
-              <MetricCard
-                label="Weekly Progress"
-                value={dashboard ? formatMinutes(dashboard.minutesThisWeek) : "0m"}
-                note={
-                  dashboard
-                    ? `${Math.max(dashboard.weeklyGoalMinutes - dashboard.minutesThisWeek, 0)} minutes to goal`
-                    : "Set your target and begin logging"
-                }
-              />
-              <MetricCard
-                label="Current Streak"
-                value={dashboard ? `${dashboard.currentStreak} day${dashboard.currentStreak === 1 ? "" : "s"}` : "0 days"}
-                note={dashboard?.goalReachedThisWeek ? "Goal reached this week!" : "Keep the streak alive"}
-              />
-              <MetricCard
-                label="Identity Profile"
-                value={dashboard?.displayName || "Anonymous Learner"}
-                note={shortAddress(wallet.account)}
-              />
-            </div>
+            {/* Metrics row */}
+            {dashboardQuery.isLoading ? (
+              <div className="metrics-row">
+                {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : (
+              <div className="metrics-row">
+                <MetricCard
+                  label="Hours Invested"
+                  value={dashboard ? formatMinutes(dashboard.totalMinutes) : "0m"}
+                  note={dashboard ? `${dashboard.sessionCount} logged sessions` : "Starts after your first session"}
+                />
+                <MetricCard
+                  label="Weekly Progress"
+                  value={dashboard ? formatMinutes(dashboard.minutesThisWeek) : "0m"}
+                  note={
+                    dashboard
+                      ? `${Math.max(dashboard.weeklyGoalMinutes - dashboard.minutesThisWeek, 0)} minutes to goal`
+                      : "Set your target and begin logging"
+                  }
+                />
+                <MetricCard
+                  label="Current Streak"
+                  value={dashboard ? `${dashboard.currentStreak} day${dashboard.currentStreak === 1 ? "" : "s"}` : "0 days"}
+                  note={dashboard?.goalReachedThisWeek ? "Goal reached this week!" : "Keep the streak alive"}
+                />
+                <MetricCard
+                  label="Identity Profile"
+                  value={dashboard?.displayName || "Anonymous Learner"}
+                  note={shortAddress(wallet.account)}
+                />
+              </div>
+            )}
 
             <div className="dashboard-grid">
               <div className="main-column">
                 <div className="panel">
                   <h2 className="panel-title">Log a Focused Study Sprint</h2>
                   <p className="panel-subtitle">Record your session. Achievements and streaks will update automatically.</p>
-                  <form className="form-grid" onSubmit={handleSessionSubmit}>
+                  <form id="log-session-form" className="form-grid" onSubmit={handleSessionSubmit}>
                     <div className="form-field">
                       <span>Topic or Subject</span>
                       <input
+                        id="session-topic-input"
                         type="text"
                         placeholder="e.g., Soroban Storage Types"
                         value={sessionForm.topic}
-                        onChange={(event) => setSessionForm((current) => ({ ...current, topic: event.target.value }))}
+                        onChange={(event) => {
+                          setSessionError("");
+                          setSessionForm((current) => ({ ...current, topic: event.target.value }));
+                        }}
                       />
                     </div>
                     <div className="form-field">
                       <span>Minutes Studied</span>
                       <input
+                        id="session-minutes-input"
                         type="number"
                         min="5"
                         max="480"
                         step="5"
                         value={sessionForm.minutesSpent}
-                        onChange={(event) => setSessionForm((current) => ({ ...current, minutesSpent: event.target.value }))}
+                        onChange={(event) => {
+                          setSessionError("");
+                          setSessionForm((current) => ({ ...current, minutesSpent: event.target.value }));
+                        }}
                       />
                     </div>
-                    <button className="button button-primary" type="submit" disabled={anyMutationPending}>
+                    <FormError message={sessionError} />
+                    <button id="log-session-btn" className="button button-primary" type="submit" disabled={anyMutationPending}>
                       {logSessionMutation.isPending ? "Logging..." : "Log Sprint"}
                     </button>
                   </form>
@@ -528,7 +597,9 @@ export default function App() {
                 <div className="panel">
                   <h2 className="panel-title">On-Chain Badges</h2>
                   <p className="panel-subtitle">Milestone achievements earned on the rewards contract via ICC calls.</p>
-                  {badgesQuery.data?.length ? (
+                  {badgesQuery.isLoading ? (
+                    <SkeletonCard />
+                  ) : badgesQuery.data?.length ? (
                     <div className="badge-grid">
                       {badgesQuery.data.map((badgeId) => {
                         const def = badgeDefinitions[badgeId] || { name: `Badge #${badgeId}`, desc: "Milestone unlocked", icon: "🏆" };
@@ -547,34 +618,50 @@ export default function App() {
                     </p>
                   )}
                 </div>
+
+                {/* Analytics Summary */}
+                <AnalyticsSummary
+                  dashboard={dashboard}
+                  badges={badgesQuery.data || []}
+                  totalLearners={totalLearnersQuery.data ?? null}
+                />
               </div>
 
               <div className="side-column">
                 <div className="panel">
                   <h2 className="panel-title">Configure Profile</h2>
                   <p className="panel-subtitle">Save a public display name and configure weekly targets.</p>
-                  <form className="form-grid" onSubmit={handleProfileSubmit}>
+                  <form id="save-profile-form" className="form-grid" onSubmit={handleProfileSubmit}>
                     <div className="form-field">
                       <span>Display Name</span>
                       <input
+                        id="display-name-input"
                         type="text"
                         placeholder="e.g., RustPilot"
                         value={profileForm.displayName}
-                        onChange={(event) => setProfileForm((current) => ({ ...current, displayName: event.target.value }))}
+                        onChange={(event) => {
+                          setProfileError("");
+                          setProfileForm((current) => ({ ...current, displayName: event.target.value }));
+                        }}
                       />
                     </div>
                     <div className="form-field">
                       <span>Weekly Goal (Minutes)</span>
                       <input
+                        id="weekly-goal-input"
                         type="number"
                         min="30"
                         max="5000"
                         step="5"
                         value={profileForm.weeklyGoalMinutes}
-                        onChange={(event) => setProfileForm((current) => ({ ...current, weeklyGoalMinutes: event.target.value }))}
+                        onChange={(event) => {
+                          setProfileError("");
+                          setProfileForm((current) => ({ ...current, weeklyGoalMinutes: event.target.value }));
+                        }}
                       />
                     </div>
-                    <button className="button button-secondary" type="submit" disabled={anyMutationPending}>
+                    <FormError message={profileError} />
+                    <button id="save-profile-btn" className="button button-secondary" type="submit" disabled={anyMutationPending}>
                       {saveProfileMutation.isPending ? "Saving..." : "Save Profile"}
                     </button>
                   </form>
@@ -591,19 +678,24 @@ export default function App() {
                       <span className="progress-fill" style={{ width: `${weeklyProgress}%` }} />
                     </div>
                   </div>
-                  <form className="form-grid" onSubmit={handleGoalSubmit}>
+                  <form id="update-goal-form" className="form-grid" onSubmit={handleGoalSubmit}>
                     <div className="form-field">
                       <span>Quick adjust goal (mins)</span>
                       <input
+                        id="quick-goal-input"
                         type="number"
                         min="30"
                         max="5000"
                         step="5"
                         value={goalForm}
-                        onChange={(event) => setGoalForm(event.target.value)}
+                        onChange={(event) => {
+                          setGoalError("");
+                          setGoalForm(event.target.value);
+                        }}
                       />
                     </div>
-                    <button className="button button-secondary" type="submit" disabled={anyMutationPending}>
+                    <FormError message={goalError} />
+                    <button id="update-goal-btn" className="button button-secondary" type="submit" disabled={anyMutationPending}>
                       {updateGoalMutation.isPending ? "Updating..." : "Update Target"}
                     </button>
                   </form>
@@ -614,7 +706,11 @@ export default function App() {
             <div className="panel" style={{ marginTop: '2.5rem' }}>
               <h2 className="panel-title">Recent Study Sessions</h2>
               <p className="panel-subtitle">Latest study sessions logged on-chain.</p>
-              {sessionsQuery.data?.length ? (
+              {sessionsQuery.isLoading ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  {[0, 1, 2].map((i) => <SkeletonCard key={i} />)}
+                </div>
+              ) : sessionsQuery.data?.length ? (
                 <div className="session-list">
                   {sessionsQuery.data.map((session) => (
                     <article className="session-card" key={session.id}>
@@ -635,10 +731,17 @@ export default function App() {
                 <p style={{ color: 'var(--ink-muted)' }}>No logged sessions found.</p>
               )}
             </div>
+
+            {/* Community Leaderboard */}
+            <LeaderboardPanel
+              entries={leaderboardQuery.data || []}
+              isLoading={leaderboardQuery.isLoading}
+              currentAccount={wallet.account}
+            />
           </div>
         )}
 
-        {/* ---------------- EVENT STREAM (ALWAYS VISIBLE IN BOTTOM FOOTER SECTION) ---------------- */}
+        {/* ---------------- EVENT STREAM ---------------- */}
         <div className="panel" style={{ marginTop: '3rem' }}>
           <h2 className="panel-title">Live Blockchain Activity</h2>
           <p className="panel-subtitle">Near real-time events polled directly from the Stellar Soroban RPC interface.</p>
