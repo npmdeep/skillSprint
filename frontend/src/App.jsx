@@ -417,7 +417,7 @@ export default function App() {
               </span>
             ) : (
               <button
-                id="connect-wallet-btn"
+                id="connect-wallet-btn" aria-label="Connect Freighter wallet"
                 className="button button-secondary"
                 style={{ padding: '0.5rem 1rem' }}
                 onClick={handleConnectWallet}
