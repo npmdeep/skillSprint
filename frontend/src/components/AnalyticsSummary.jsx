@@ -1,3 +1,5 @@
+// AnalyticsSummary.jsx — Displays per-learner study analytics derived from on-chain dashboard data.
+// Includes next-badge milestone progress bar and community learner count.
 import { useMemo } from "react";
 
 const badgeThresholds = [
