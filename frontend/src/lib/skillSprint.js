@@ -1,3 +1,8 @@
+/**
+ * skillSprint.js — Stellar SDK wrapper for the SkillSprint Ledger dApp.
+ * Provides all contract read/write helpers, wallet utilities, and event streaming.
+ * All functions are async and throw on failure; callers should handle errors.
+ */
 import {
   getAddress,
   getNetworkDetails,
