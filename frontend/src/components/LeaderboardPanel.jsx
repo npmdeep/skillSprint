@@ -1,3 +1,5 @@
+// LeaderboardPanel.jsx � Community leaderboard derived from on-chain event history.
+// Reads live learner profiles from the Soroban ledger contract and ranks by total_minutes.
 import { useMemo } from "react";
 
 const badgeIcons = { 1: "🥉", 2: "🥈", 3: "🥇" };
