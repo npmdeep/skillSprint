@@ -315,7 +315,7 @@ impl SkillSprintLedger {
             }
         }
 
-        // Insertion-sort by total_minutes descending (contract environment has no std sort)
+        // Insertion-sort by total_minutes descending.`n        // The Soroban no_std environment does not have access to std::sort,`n        // so we use a simple insertion sort (O(n^2)) which is acceptable for`n        // the small N typically passed to this view function.
         let len = entries.len();
         if len <= 1 {
             return entries;
