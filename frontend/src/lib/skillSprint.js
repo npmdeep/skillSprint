@@ -244,7 +244,7 @@ export async function readRecentSessions(account, limit = 5) {
 
   const indexes = Array.from({ length: Math.min(count, limit) }, (_, idx) => count - idx - 1);
 
-  // Batch fetches in groups of 3 to avoid overwhelming the RPC endpoint
+  // Batch fetches in groups of 3 to avoid overwhelming the RPC endpoint.`n  // Stellar testnet RPC has a ~5 req/s per IP limit that parallel calls can easily hit.
   const BATCH_SIZE = 3;
   const results = [];
   for (let i = 0; i < indexes.length; i += BATCH_SIZE) {
