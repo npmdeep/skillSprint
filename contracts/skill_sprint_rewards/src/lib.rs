@@ -37,7 +37,7 @@ impl SkillSprintRewards {
     }
 
     pub fn award_badge(env: Env, learner: Address, badge_type: u32) {
-        // Require auth of the admin (the ledger contract calling this via ICC)
+        // Require auth of the admin (the ledger contract address stored as admin at init).`n        // In Soroban ICC, invoke_contract automatically provides authorization on behalf`n        // of the calling contract, so this require_auth succeeds when called via the ledger.
         let admin = Self::get_admin(env.clone());
         admin.require_auth();
 
