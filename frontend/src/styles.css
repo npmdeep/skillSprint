@@ -517,3 +517,9 @@ input:focus {
   background: var(--bg-sand) !important;
 }
 
+
+/* -- Focus ring improvement for keyboard nav -- */
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
