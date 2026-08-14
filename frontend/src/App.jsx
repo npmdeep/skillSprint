@@ -42,7 +42,7 @@ const emptyTx = {
   hash: ""
 };
 
-const badgeDefinitions = {
+// Badge definitions for known milestone IDs (1=Bronze, 2=Silver, 3=Gold)`nconst badgeDefinitions = {
   1: { name: "Bronze Learner", desc: "Logged 60+ minutes of total study time", icon: "🥉" },
   2: { name: "Silver Learner", desc: "Logged 300+ minutes of total study time", icon: "🥈" },
   3: { name: "Gold Learner", desc: "Logged 1000+ minutes of total study time", icon: "🥇" }
