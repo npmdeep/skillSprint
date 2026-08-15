@@ -44,3 +44,5 @@ export default class ErrorBoundary extends Component {
     return this.props.children;
   }
 }
+
+// ErrorBoundary wraps the entire app to catch unhandled render errors and display a friendly fallback.
