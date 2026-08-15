@@ -17,3 +17,6 @@ export default defineConfig({
     }
   }
 });
+
+// Note: posthog-js is intentionally imported both statically (main.jsx init) and
+// dynamically (App.jsx capture calls). The static import wins and keeps it in the main bundle.
