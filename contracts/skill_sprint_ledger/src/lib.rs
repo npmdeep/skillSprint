@@ -297,7 +297,7 @@ impl SkillSprintLedger {
             .unwrap_or_else(|| panic!("Session not found"))
     }
 
-    /// Returns a leaderboard snapshot for the provided list of learner addresses.
+    /// Returns a leaderboard snapshot for the provided list of learner addresses.`n    /// Entries are returned sorted by total_minutes descending.`n    /// Learners without a saved profile are silently skipped.`n    /// Maximum recommended input size is 20 addresses to stay within compute limits.
     /// Entries are returned sorted by total_minutes descending.
     /// Addresses with no profile are silently skipped.
     pub fn get_leaderboard_snapshot(env: Env, learners: Vec<Address>) -> Vec<LeaderboardEntry> {
