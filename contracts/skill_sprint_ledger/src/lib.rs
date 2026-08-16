@@ -116,7 +116,7 @@ impl SkillSprintLedger {
             .unwrap_or_else(|| panic!("Rewards contract not configured"))
     }
 
-    /// Returns the total number of unique learner profiles registered.
+    /// Returns the total number of unique learner profiles registered.`n    /// Incremented atomically in save_profile only for first-time registrations.`n    /// Use this to power community size displays on the frontend.
     pub fn get_total_learners(env: Env) -> u32 {
         env.storage()
             .instance()
