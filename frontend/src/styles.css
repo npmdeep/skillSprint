@@ -575,3 +575,13 @@ input:focus-visible {
     border: 1px solid #ccc;
   }
 }
+
+/* -- Metric card interaction polish -- */
+.metric-card {
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
