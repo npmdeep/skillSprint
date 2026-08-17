@@ -1,0 +1,29 @@
+1. Problem Statement
+Self-directed learners and independent developers often spend hundreds of hours acquiring new skills, participating in bootcamps, or completing online courses, but they lack a verifiable, decentralized way to prove their study time to potential employers or peers. Traditional certificates are easily forged and don't reflect actual time invested, while centralized education platforms silo user data. When learners want to showcase their dedication and consistency, they lack transparent, immutable proof of their effort.
+
+Our core idea, SkillSprint Ledger, is a decentralized educational tracking platform that logs verified study sessions on-chain. Learners log their study sprints (topic and minutes spent), the smart contract updates their profile and maintains their current streak, and the community can view a transparent leaderboard of top learners. Furthermore, a rewards contract automatically issues milestone badges when learners hit specific study thresholds.
+
+2. Why Stellar?
+SkillSprint Ledger is designed specifically to leverage the unique advantages of the Stellar network. Stellar's low transaction fees make micro-logging of daily study sessions financially viable for learners globally. Stellar's fast transaction finality ensures that study logs, streak updates, and badge issuance are instantaneous. Crucially, Stellar's Soroban smart contracts support robust Inter-Contract Communication (ICC), which is necessary for coordinating our multi-contract architecture where the ledger contract seamlessly triggers the rewards contract to issue badges. Finally, Stellar's native SEP integrations and fee-bump capabilities allow us to sponsor gas fees in the future, creating a seamless, non-crypto-native onboarding experience for students worldwide.
+
+3. Target Users
+- Tier 1 (Early Adopters): Web3-native developers, bootcamp students, and Stellar ecosystem enthusiasts looking to instantly log their learning footprint and gain on-chain achievement certificates.
+- Tier 2 (Growth Phase): Independent learners, self-taught programmers, and open-source contributors looking to build a verifiable public portfolio of their dedication, along with technical recruiters seeking verified talent.
+- Tier 3 (Mainnet Scale): Educational institutions and massive open online courses (MOOCs) seeking auditable, on-chain learning tracking for their students, alongside enterprise hiring teams looking for verified continuous learning metrics.
+
+4. Technical Architecture
+- Frontend: Next.js web application integrated with Freighter Wallet and Stellar ecosystem tools.
+- Smart Contracts: 2 modular Soroban contracts (Rust). The SkillSprint Ledger contract registers learner profiles, logs study sessions, tracks weekly goals, and maintains streaks. The SkillSprint Rewards contract tracks milestone achievements and issues badges based on total study time.
+- Data Flow: The user submits a study session to the Ledger contract. The Ledger contract updates the profile's total minutes and streak. For milestone tracking, the Ledger contract utilizes Inter-Contract Communication (ICC) to command the Rewards contract to verify and issue badges. The frontend polls live RPC events to update the community leaderboard in real time.
+
+5. Complexity Evaluation
+- Multi-Contract ICC Coordination: Safely managing state changes and authorization across distinct, interacting smart contracts (Ledger and Rewards).
+- On-Chain State Management: Implementing secure and efficient data storage for individual learning sessions, streaks, and global community metrics without hitting compute limits.
+- State Synchronization: Handling real-time event streaming and updating on-chain learning dashboards and leaderboards dynamically.
+
+6. Roadmap
+- Level 4 (Production MVP & Initial Scale): We will transform the testnet MVP of SkillSprint into a production-ready application. We will harden our Soroban contracts with strict validations, secure entry points, and error handling, and deploy them to the Stellar Testnet. On the frontend, we will integrate PostHog for product analytics and Sentry for error tracking. Through targeted community outreach and incentivized testing, we will onboard our first 10 real users, export their feedback via Google Forms, and establish a GitHub Actions CI/CD pipeline for automated testing and builds.
+
+- Level 5 (User Growth & Feature Expansion): We will scale from 10 to 50 active users using a content marketing flywheel (building in public on Twitter, technical blogs on verifiable education). Based on L4 feedback, we will expand product capabilities by deploying a new, on-chain Guild Contract that allows learners to form study groups and compete collectively. We will also introduce advanced leaderboard filters, a detailed learning analytics dashboard, and create a professional pitch deck detailing the verifiable education market opportunity.
+
+- Level 6 (Mainnet Vision & Advanced Features): We will conduct a rigorous smart contract audit and deploy the hardened contracts to the Stellar Mainnet. To achieve true scale and onboard non-crypto students, we will implement Fee Sponsorship using Stellar's fee bump transactions, providing a completely gasless onboarding experience. We will also introduce verifiable credentials for hiring integrations. We will launch publicly on ProductHunt/Twitter to acquire 20+ verified mainnet users with real XLM transactions, and publish a technical open-source guide on orchestrating multi-contract educational architectures in Soroban.
