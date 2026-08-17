@@ -243,19 +243,6 @@ A lightweight `runtime-monitor.js` module catches `window.error` and `unhandledr
 </p>
 
 ---
-
-## 👥 User Onboarding & Feedback
-
-### Onboarding Approach
-
-Users are onboarded via targeted community outreach in Stellar Discord channels and direct invitations. Each user:
-
-1. Installs Freighter browser extension
-2. Connects wallet to SkillSprint on Stellar Testnet
-3. Creates a learner profile with display name and weekly goal
-4. Logs at least one study session
-5. Fills out the feedback form
-
 ### Feedback Collection
 
 | Resource | Link |
