@@ -4,12 +4,12 @@
 
 **A Decentralized Focused Learning Tracker on Stellar**
 
-*Audit and gamify study time milestones secured by Stellar Soroban smart contracts and ICC badges*
+*Log study sessions, build verifiable streaks, and earn on-chain milestone badges — all secured by Soroban smart contracts with Inter-Contract Communication (ICC)*
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-skill--sprint--stellar.netlify.app-6366f1?style=for-the-badge&logo=netlify)](https://skill-sprint-stellar.netlify.app/)
 [![GitHub](https://img.shields.io/badge/Source_Code-npmdeep%2FskillSprint-181717?style=for-the-badge&logo=github)](https://github.com/npmdeep/skillSprint)
 [![Network](https://img.shields.io/badge/Network-Stellar_Testnet-00B4D8?style=for-the-badge&logo=stellar)](https://stellar.expert/explorer/testnet)
-[![Built for RiseIn](https://img.shields.io/badge/Built_for-RiseIn_Level_3-f59e0b?style=for-the-badge)](https://www.risein.com/)
+[![Built for RiseIn](https://img.shields.io/badge/Built_for-RiseIn_Level_4-22c55e?style=for-the-badge)](https://www.risein.com/)
 
 </div>
 
@@ -19,17 +19,20 @@
 
 1. [Problem Statement](#-problem-statement)
 2. [Why Stellar?](#-why-stellar)
-3. [Live Deployment](#-live-deployment)
-4. [Contract Addresses & Transactions](#-contract-addresses--transactions)
-5. [Architecture](#-architecture)
-6. [Smart Contracts](#-smart-contracts)
-7. [Submission Screenshots](#-submission-screenshots)
-8. [Testing](#-testing)
-9. [Tech Stack](#-tech-stack)
-10. [Project Structure](#-project-structure)
-11. [Local Development](#-local-development)
-12. [Roadmap](#-roadmap)
-13. [Author](#-author)
+3. [Features](#-features)
+4. [Live Deployment](#-live-deployment)
+5. [Contract Addresses & Transactions](#-contract-addresses--transactions)
+6. [Architecture](#-architecture)
+7. [Smart Contracts](#-smart-contracts)
+8. [Monitoring & Analytics](#-monitoring--analytics)
+9. [User Onboarding & Feedback](#-user-onboarding--feedback)
+10. [Submission Screenshots](#-submission-screenshots)
+11. [Testing](#-testing)
+12. [Tech Stack](#-tech-stack)
+13. [Project Structure](#-project-structure)
+14. [Local Development](#-local-development)
+15. [Roadmap](#-roadmap)
+16. [Author](#-author)
 
 ---
 
@@ -60,6 +63,32 @@ SkillSprint Ledger is designed specifically to utilize the native advantages of 
 
 ---
 
+## ✨ Features
+
+### Production MVP Capabilities
+
+| Category | Feature |
+|----------|---------|
+| **Profile Management** | Create and update learner profiles with display names and weekly study goals. |
+| **Study Session Logging** | Log focused study sprints with topic and minutes — all verified on-chain. |
+| **Streak Tracking** | Automatic daily streak detection and weekly progress tracking with goal completion. |
+| **Milestone Badges** | Bronze (60m), Silver (300m), and Gold (1000m) badges issued via ICC on the rewards contract. |
+| **Community Leaderboard** | Real-time leaderboard of top learners ranked by total verified study time. |
+| **Learning Analytics** | Personal analytics dashboard with next-badge progress bar, avg session length, and days since joined. |
+| **Live Event Feed** | Real-time blockchain activity stream polled directly from Stellar Soroban RPC. |
+
+### Production Quality
+
+| Category | Detail |
+|----------|--------|
+| **Error Handling** | Inline form validation (no browser alerts), ErrorBoundary crash recovery, runtime error monitoring. |
+| **Loading States** | Shimmer skeleton loaders on metric cards, session lists, and leaderboard rows. |
+| **Mobile Responsive** | Full media query coverage at 1024px and 640px breakpoints. |
+| **Accessibility** | aria-labels on interactive elements, focus-visible rings for keyboard navigation. |
+| **Security** | saturating_add overflow protection, whitespace-only topic rejection, Freighter install guard. |
+
+---
+
 ## 🌐 Live Deployment
 
 | Resource | Link |
@@ -84,11 +113,11 @@ All contracts are deployed and cross-initialized on the **Stellar Testnet** usin
 ### On-Chain Deployment Transactions
 
 | Action | Transaction Hash |
-|--------|-----------------|
-| **Rewards Contract — Upload & Deploy** | [`6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523`](https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523) |
-| **Ledger Contract — Upload & Deploy** | [`fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da`](https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da) |
-| **Rewards Contract — Initialize (cross-link to Ledger)** | [`aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88`](https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88) |
-| **Ledger Contract — Initialize (cross-link to Rewards)** | [`4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a`](https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a) |
+|--------|--------------------|
+| **Rewards Contract — Upload & Deploy** | [`6ba0d83d...`](https://stellar.expert/explorer/testnet/tx/6ba0d83d841ead3c504dbec6f12c0b444d84eea289f191e09ca32db27088e523) |
+| **Ledger Contract — Upload & Deploy** | [`fe21acd7...`](https://stellar.expert/explorer/testnet/tx/fe21acd70f4d9066c19ae8153c3abf099ab958db4587b20edfeb6adab2e254da) |
+| **Rewards Contract — Initialize (cross-link)** | [`aed52073...`](https://stellar.expert/explorer/testnet/tx/aed5207343cdab18167b81876452d14c2c7e8711bbf259939569c69ddc336c88) |
+| **Ledger Contract — Initialize (cross-link)** | [`4db24765...`](https://stellar.expert/explorer/testnet/tx/4db24765451abb8c376a04cf1da977a0299bd269b23901ef495f12916b729c3a) |
 
 ---
 
@@ -100,31 +129,34 @@ SkillSprint Ledger consists of Rust contracts managing learner profiles and rewa
 ┌────────────────────────────────────────────────────────┐
 │                   React Dashboard                      │
 │                                                        │
-│   Landing │ Dashboard │ Profile Configure │ Ledger     │
+│   Landing │ Dashboard │ Analytics │ Leaderboard        │
 │                                                        │
 │                     Freighter Wallet                   │
 └──────────────────────────┬─────────────────────────────┘
                            │ TypeScript Contract Client
                   ┌────────▼────────┐
-                  │  skill_sprint   │
-                  │  Contract       │
-                  │                 │
-                  │  save_profile() │
-                  │  log_session()  │
-                  │  claim_badge()  │
+                  │  skill_sprint   │          ┌─────────────────────┐
+                  │  _ledger        │──ICC──▶  │  skill_sprint       │
+                  │                 │          │  _rewards            │
+                  │  save_profile() │          │                     │
+                  │  log_session()  │          │  award_badge()      │
+                  │  claim_badge()  │          │  get_badges()       │
+                  │  get_dashboard()│          │  get_badge_count()  │
+                  │  get_total_     │          │  get_highest_badge()│
+                  │    learners()   │          └─────────────────────┘
+                  │  get_leaderboard│
+                  │    _snapshot()  │
                   └─────────────────┘
                     Stellar Testnet
 ```
 
 ### Inter-Contract Communication (ICC) Flow
 
-Logging study sessions on the main ledger registry uses ICC to check total study minutes and dynamically issue achievement badges on the rewards contract.
-
 ```
-Step 1: User calls save_profile()  → Sets up display profile and weekly targets.
-Step 2: User calls log_session()  → Registers sessions, updates streaks, and emits events.
-Step 3: User calls claim_badge()   → Ledger contract calls rewards contract
-                                     via ICC to award milestone achievements.
+Step 1: User calls save_profile()     → Sets up display profile and weekly targets.
+Step 2: User calls log_session()      → Registers sessions, updates streaks, and emits events.
+Step 3: User calls claim_badge()      → Ledger contract calls rewards contract
+                                         via ICC to award milestone achievements.
 ```
 
 ---
@@ -133,24 +165,121 @@ Step 3: User calls claim_badge()   → Ledger contract calls rewards contract
 
 ### SkillSprint Ledger Contract (`CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G`)
 
-Manages learner profile registry, focus times, and events streams.
+Manages learner profile registry, focus times, events streams, and community metrics.
 
 | Function | Access | Description |
 |----------|--------|-------------|
 | `save_profile()` | User | Configure display name and weekly minutes targets |
 | `update_weekly_goal()` | User | Update active weekly targets |
 | `log_study_session()` | User | Log study topics and minutes |
+| `claim_badge()` | User | Trigger ICC to award milestone badges |
 | `get_dashboard()` | Public (read) | Retrieve user progress stats and streaks |
 | `has_profile()` | Public (read) | Check if a user profile is configured |
+| `get_total_learners()` | Public (read) | Returns global count of registered learners |
+| `get_leaderboard_snapshot()` | Public (read) | Returns ranked entries sorted by total study time |
+| `get_session_count()` | Public (read) | Returns number of sessions logged by a learner |
+| `get_session()` | Public (read) | Returns a specific session by index |
 
 ### Rewards Contract (`CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM`)
 
-Handles achievement badges metadata and resolves ICC badge claims.
+Handles achievement badge metadata and resolves ICC badge claims.
 
 | Function | Access | Description |
 |----------|--------|-------------|
 | `award_badge()` | Ledger Contract only | Award badge records via ICC |
 | `get_badges()` | Public (read) | Query badges earned by a user wallet |
+| `get_badge_count()` | Public (read) | Returns total distinct badges earned |
+| `get_highest_badge()` | Public (read) | Returns the highest tier badge earned (0 if none) |
+
+---
+
+## 📊 Monitoring & Analytics
+
+SkillSprint integrates three layers of production monitoring:
+
+### 1. PostHog — Product Analytics
+
+PostHog is initialized in `main.jsx` and tracks:
+
+- **Page views** — Automatic capture on every route load.
+- **Wallet connections** — `wallet_connected` event with account address.
+- **Profile saves** — `profile_saved_initiated` event.
+- **Study sessions** — `study_session_logged_initiated` event with topic and minutes.
+- **Goal updates** — `goal_updated_initiated` event.
+
+Configuration:
+```js
+posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+  api_host: import.meta.env.VITE_POSTHOG_HOST || "https://us.i.posthog.com",
+  person_profiles: "identified_only",
+  capture_pageview: true,
+});
+```
+
+### 2. Sentry — Error Tracking
+
+Sentry captures unhandled exceptions, performance traces, and session replays:
+
+```js
+Sentry.init({
+  dsn: import.meta.env.VITE_SENTRY_DSN,
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration(),
+  ],
+  tracesSampleRate: 1.0,
+  replaysOnErrorSampleRate: 1.0,
+});
+```
+
+### 3. Runtime Monitor — Custom Error Beacon
+
+A lightweight `runtime-monitor.js` module catches `window.error` and `unhandledrejection` events and reports structured payloads via `navigator.sendBeacon`. This acts as a fallback in case Sentry DSN is not configured.
+
+### Screenshot — Analytics Dashboard
+
+<p align="center">
+  <img src="sub%20assets/analytics%20ss.png" width="800" alt="PostHog Analytics Dashboard" />
+</p>
+
+---
+
+## 👥 User Onboarding & Feedback
+
+### Onboarding Approach
+
+Users are onboarded via targeted community outreach in Stellar Discord channels and direct invitations. Each user:
+
+1. Installs Freighter browser extension
+2. Connects wallet to SkillSprint on Stellar Testnet
+3. Creates a learner profile with display name and weekly goal
+4. Logs at least one study session
+5. Fills out the feedback form
+
+### Feedback Collection
+
+| Resource | Link |
+|----------|------|
+| 📝 **Feedback Form** | [Google Form — User Feedback Survey](YOUR_GOOGLE_FORM_LINK_HERE) |
+| 📊 **Raw Responses** | [Google Spreadsheet — Feedback Data](YOUR_SPREADSHEET_LINK_HERE) |
+
+### User Feedback Summary
+
+Based on initial user testing, key feedback themes include:
+
+| Theme | Feedback | Action Taken |
+|-------|----------|-------------|
+| **UX Clarity** | Users appreciated inline form errors over browser alerts | Replaced all `alert()` calls with `<FormError>` components |
+| **Loading Experience** | Initial blank states felt broken | Added shimmer skeleton loaders for all data-dependent sections |
+| **Leaderboard** | Users wanted to see how they rank against others | Built community leaderboard with rank badges and streak display |
+| **Analytics** | Users wanted to see progress toward next badge | Added AnalyticsSummary with animated progress bar |
+| **Mobile** | Several users tested on mobile devices | Verified responsive breakpoints at 1024px and 640px |
+
+### Wallet Interaction Proof
+
+
+- [Ledger Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G)
+- [Rewards Contract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM)
 
 ---
 
@@ -159,7 +288,7 @@ Handles achievement badges metadata and resolves ICC badge claims.
 ### 💻 Desktop UI
 
 <p align="center">
-  <img src="sub%20assets/ui.png" width="800" alt="SkillSprint Dashboard View 1" />
+  <img src="sub%20assets/ui.png" width="800" alt="SkillSprint Dashboard View" />
   <br /><br />
   <img src="sub%20assets/ui2.png" width="800" alt="SkillSprint Profile Config" />
   <br /><br />
@@ -170,6 +299,12 @@ Handles achievement badges metadata and resolves ICC badge claims.
 
 <p align="center">
   <img src="sub%20assets/mobui.png" width="375" alt="SkillSprint Mobile UI" />
+</p>
+
+### 📊 Analytics & Monitoring Setup
+
+<p align="center">
+  <img src="sub%20assets/analytics%20ss.png" width="800" alt="PostHog Analytics Dashboard" />
 </p>
 
 ### 🔄 CI/CD Pipeline
@@ -186,18 +321,41 @@ Handles achievement badges metadata and resolves ICC badge claims.
 
 | Suite | Tests | Status |
 |-------|-------|--------|
+| Ledger Contract (Rust) | 11 tests | ✅ Passing |
+| Rewards Contract (Rust) | 6 tests | ✅ Passing |
 | Frontend (Vitest) | 1 test | ✅ Passing |
-| Escrow Contract (Rust) | 8 tests | ✅ Passing |
-| **Total** | **9 tests** | ✅ **9/9 Passing** |
+| **Total** | **18 tests** | ✅ **18/18 Passing** |
+
+### Contract Test Coverage
+
+| Test | Category |
+|------|----------|
+| `creates_profile_and_reads_dashboard` | Profile lifecycle |
+| `logs_sessions_and_grows_streak_across_days` | Streak logic |
+| `resets_weekly_progress_after_boundary` | Weekly boundary reset |
+| `rejects_short_display_names` | Input validation |
+| `rejects_missing_profile_session_logs` | Auth guard |
+| `rejects_short_sessions` | Input validation |
+| `rejects_bad_goal_updates` | Input validation |
+| `rejects_whitespace_only_topic` | Security — whitespace bypass |
+| `tracks_total_learner_count` | Global counter |
+| `same_day_session_does_not_advance_streak` | Streak dedup |
+| `leaderboard_snapshot_sorted_by_total_minutes` | Leaderboard ordering |
+| `awards_badge_and_reads_back` | Badge lifecycle |
+| `does_not_duplicate_same_badge` | Badge dedup |
+| `empty_learner_returns_empty_badges` | Edge case |
+| `get_badge_count_returns_correct_count` | Badge counting |
+| `get_highest_badge_returns_max` | Badge ranking |
+| `rejects_invalid_badge_type_zero` | Input validation |
 
 ### Running Tests
 
 ```bash
-# Frontend Tests
-npm --workspace frontend run test
-
-# Rust Contracts Tests
+# All contract tests
 cargo test
+
+# Frontend tests
+npm --workspace frontend run test
 ```
 
 ---
@@ -208,11 +366,15 @@ cargo test
 |-------|-----------|---------|---------|
 | **Frontend Framework** | React + Vite | 5.4 | Fast, responsive dashboard |
 | **Language** | JavaScript | ESModules | Dynamic states and contract client integration |
-| **Styling** | Vanilla CSS | CSS3 | Warm paper light-editorial components |
-| **Smart Contracts** | Soroban (Rust) | stable | On-chain ledger registries and streaks |
-| **Blockchain SDK** | @stellar/stellar-sdk | 12.x | Transaction building, XDR encoding, RPC calls |
-| **Wallet Integration** | Freighter API | 1.x | Wallet signatures and network handshakes |
-| **Hosting** | Netlify | — | Production hosting |
+| **Styling** | Vanilla CSS | CSS3 | Warm paper light-editorial theme with custom properties |
+| **Smart Contracts** | Soroban (Rust) | stable | On-chain ledger registries, streaks, and ICC rewards |
+| **Blockchain SDK** | @stellar/stellar-sdk | 15.x | Transaction building, XDR encoding, RPC calls |
+| **Wallet Integration** | Freighter API | 6.x | Wallet signatures and network handshakes |
+| **Analytics** | PostHog | 1.x | Product analytics and user behavior tracking |
+| **Error Tracking** | Sentry | 10.x | Exception monitoring and session replays |
+| **State Management** | TanStack React Query | 5.x | Server state caching and background refetching |
+| **Hosting** | Netlify | — | Production hosting with SPA redirects |
+| **CI/CD** | GitHub Actions | — | Automated contract tests, WASM builds, and frontend bundling |
 
 ---
 
@@ -222,23 +384,30 @@ cargo test
 skillsprint-ledger/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml             # Automated contract build and frontend check
+│       └── ci.yml                  # Contract tests + WASM builds + frontend bundle
 ├── contracts/
-│   ├── focus_forge/           # Main Ledger contract source code
-│   └── focus_forge_rewards/   # Rewards Incentive contract source code
+│   ├── skill_sprint_ledger/        # Main Ledger contract (profiles, sessions, streaks, leaderboard)
+│   └── skill_sprint_rewards/       # Rewards contract (badges via ICC)
 ├── deployments/
-│   └── testnet.json           # Deployed contract address records
+│   └── testnet.json                # Deployed contract address records
 ├── frontend/
 │   ├── public/
 │   ├── src/
+│   │   ├── components/
+│   │   │   ├── AnalyticsSummary.jsx # Personal learning analytics with badge progress
+│   │   │   └── LeaderboardPanel.jsx # Community leaderboard with rank badges
 │   │   ├── lib/
-│   │   │   ├── skillSprint.js # Freighter wrappers and RPC event stream pollers
-│   │   │   └── contract-config.js
-│   │   ├── App.jsx            # Dashboard and feed stream
-│   │   ├── main.jsx           # Application entry point
-│   │   └── styles.css         # Warm paper theme style sheets
+│   │   │   ├── skillSprint.js      # Stellar SDK wrapper: contract reads, writes, events
+│   │   │   ├── contract-config.js  # Auto-generated contract addresses
+│   │   │   └── runtime-monitor.js  # Custom error beacon and unhandled rejection monitor
+│   │   ├── App.jsx                 # Main dashboard, forms, badge display, event feed
+│   │   ├── ErrorBoundary.jsx       # React error boundary with crash recovery UI
+│   │   ├── main.jsx                # Entry point: PostHog + Sentry + React Query init
+│   │   └── styles.css              # Warm paper theme with skeleton animations
 │   └── package.json
-└── package.json
+├── sub assets/                     # Submission screenshots and demo video
+├── USER_FEEDBACK.md                # User onboarding proof and feedback summary
+└── package.json                    # Root workspace config with dev/build/test scripts
 ```
 
 ---
@@ -247,8 +416,9 @@ skillsprint-ledger/
 
 ### Prerequisites
 - Node.js 18+
-- Rust stable toolchain
+- Rust stable toolchain with `wasm32v1-none` target
 - Freighter wallet browser extension
+- Stellar CLI (optional, for contract deployment)
 
 ### Installation
 
@@ -264,16 +434,57 @@ npm install
 npm run dev
 ```
 
+### Available Scripts
+
+```bash
+npm run dev            # Start Vite dev server
+npm run build:web      # Build frontend for production
+npm run contract:test  # Run all Rust contract tests
+npm run verify         # Full pipeline: tests + WASM build + frontend bundle
+```
+
+### Environment Variables
+
+Copy `frontend/.env.example` to `frontend/.env` and configure:
+
+```bash
+VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_STELLAR_NETWORK_PASSPHRASE=Test SDF Network ; September 2015
+VITE_CONTRACT_ID=CBDDGQJN6OJRK445UERC5Y3NUVMRYU4XOUCRKYX6HZ36PV6POO2WJP7G
+VITE_REWARDS_CONTRACT_ID=CDIGB24SGW4LAYS74R776KKT7Y2L6WFWY5R6S773H7NOEFLNVE7G3RGM
+VITE_POSTHOG_KEY=your_posthog_project_api_key
+VITE_SENTRY_DSN=your_sentry_dsn_url
+```
+
 ---
 
 ## 🗺️ Roadmap
-
-### ✅ Level 3 — Orange Belt (Complete)
+### ✅ Level 3 — Orange Belt
 - Main Ledger & Rewards dual-contract architecture with Inter-Contract Communication (ICC).
 - Real-time event polling stream using Stellar RPC triggers.
 - Unit tests written & passing for both contracts and frontend.
 - Deployed on Stellar Testnet and hosted on Netlify.
 - Mobile responsive UI and automated CI/CD checks.
+
+### Level 4 — Green Belt 
+- Production-ready MVP with stable frontend and contract architecture.
+- PostHog analytics, Sentry error tracking, and custom runtime monitoring integrated.
+- AnalyticsSummary and LeaderboardPanel components for rich data visualization.
+- Security hardening: saturating_add overflow protection, whitespace topic validation, Freighter install guard.
+- Expanded test suite: 18 tests across ledger and rewards contracts.
+- Full CI/CD pipeline: contract tests, WASM builds, and frontend bundling on every push.
+
+### Level 5 — Blue Belt (Planned)
+- Scale to 50+ active users via content marketing and building in public.
+- Deploy on-chain Guild Contract for study group competitions.
+- Advanced leaderboard filters and detailed learning analytics dashboard.
+- Professional pitch deck for the verifiable education market opportunity.
+
+###  Level 6 — Black Belt (Vision)
+- Smart contract audit and Stellar Mainnet deployment.
+- Fee Sponsorship via Stellar fee bump transactions for gasless onboarding.
+- Verifiable credentials for hiring integrations.
+- Public launch on ProductHunt with 20+ verified mainnet users.
 
 ---
 
