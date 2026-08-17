@@ -247,8 +247,8 @@ A lightweight `runtime-monitor.js` module catches `window.error` and `unhandledr
 
 | Resource | Link |
 |----------|------|
-| 📝 **Feedback Form** | [Google Form — User Feedback Survey](YOUR_GOOGLE_FORM_LINK_HERE) |
-| 📊 **Raw Responses** | [Google Spreadsheet — Feedback Data](YOUR_SPREADSHEET_LINK_HERE) |
+| 📝 **Feedback Form** | [Google Form — User Feedback Survey](https://forms.gle/ZFWnbzDnAo6z4hRY7) |
+| 📊 **Raw Responses** | [Google Spreadsheet — Feedback Data](https://docs.google.com/spreadsheets/d/1MAAlbeDmgmlkUPCncppS8ItdPNcy7ovOESpaDuKOf1g/edit?usp=sharing) |
 
 ### User Feedback Summary
 

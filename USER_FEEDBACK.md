@@ -10,10 +10,10 @@ This document summarizes user onboarding activities and feedback collected for t
 
 | Resource | Link |
 |----------|------|
-| 📝 **Feedback Form** | [Google Form — User Feedback Survey](YOUR_GOOGLE_FORM_LINK_HERE) |
-| 📊 **Raw Responses** | [Google Spreadsheet — Feedback Data](YOUR_SPREADSHEET_LINK_HERE) |
+| 📝 **Feedback Form** | [Google Form — User Feedback Survey](https://forms.gle/ZFWnbzDnAo6z4hRY7) |
+| 📊 **Raw Responses** | [Google Spreadsheet — Feedback Data](https://docs.google.com/spreadsheets/d/1MAAlbeDmgmlkUPCncppS8ItdPNcy7ovOESpaDuKOf1g/edit?usp=sharing) |
 
-> Replace `YOUR_GOOGLE_FORM_LINK_HERE` and `YOUR_SPREADSHEET_LINK_HERE` with actual links before submission.
+> Replace `https://forms.gle/ZFWnbzDnAo6z4hRY7` and `https://docs.google.com/spreadsheets/d/1MAAlbeDmgmlkUPCncppS8ItdPNcy7ovOESpaDuKOf1g/edit?usp=sharing` with actual links before submission.
 
 ---
 
