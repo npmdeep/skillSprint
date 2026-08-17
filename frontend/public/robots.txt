@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://skill-sprint-stellar.netlify.app/sitemap.xml
