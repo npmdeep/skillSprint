@@ -558,3 +558,20 @@ input:focus-visible {
   margin-bottom: 1.5rem;
   line-height: 1.6;
 }
+
+/* -- Print styles: hide nav and interactive elements when printing -- */
+@media print {
+  .top-nav,
+  .button,
+  .form-grid,
+  .hero-progress {
+    display: none !important;
+  }
+  .app-shell {
+    padding: 0;
+  }
+  .panel {
+    break-inside: avoid;
+    border: 1px solid #ccc;
+  }
+}
